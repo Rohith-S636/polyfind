@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 
-test("research claims document has a traceable matrix and evidence boundaries", async () => {
+test("research claims document has a traceable matrix and measured evidence boundaries", async () => {
   const document = await fs.readFile(
     path.resolve(process.cwd(), "docs/RESEARCH_CLAIMS_AND_RELATED_WORK.md"),
     "utf8",
@@ -19,23 +19,17 @@ test("research claims document has a traceable matrix and evidence boundaries", 
     "Azure Cache-Aside pattern",
     "## What is established knowledge",
     "## What PolyFind proposes",
-    "    "## Measured CI benchmark (2026-11-11)",",
-    "    "42959976828",",
-    "    "50 products indexed in LanceDB",",
-    "    "0.867",",
-    "    "0.887",",
-    "    "43.18%",",
-    "    "114 / 264",",
-    "    "Historical regression fixture",",
-    "    "independent annotators review them",",
-
+    "## Measured CI benchmark (2026-11-11)",
+    "42959976828",
+    "50 products indexed in LanceDB",
+    "0.867",
+    "0.887",
+    "43.18%",
+    "114 / 264",
+    "Historical regression fixture",
+    "independent annotators review them",
     "## Claims explicitly not supported",
     "## Threats to validity and limitations",
-
-
-
-
-
   ]) {
     assert.ok(document.includes(required), `missing required research evidence: ${required}`);
   }

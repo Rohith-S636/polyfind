@@ -304,9 +304,7 @@ export class SearchService {
 
     const totalMs = Math.round((performance.now() - started) * 100) / 100;
     const strategyName = isHybridRequested
-      ? successfulStores.includes("vector")
-        ? `adaptive-${successfulStores.join("+")}`
-        : "adaptive-mysql"
+      ? `adaptive-${successfulStores.length > 0 ? successfulStores.join("+") : "mysql"}`
       : `${this.plannerMode}-${successfulStores.length > 0 ? successfulStores.join("+") : "mysql"}`;
 
     const response: SearchResponse = {

@@ -30,15 +30,19 @@ This protects the tested path; it is not a universal strong-consistency guarante
 
 ## Benchmark and evidence talking points
 
-The committed baseline comparison is a fixture for regression and visualization tests. It contains provisional relevance labels and fixture environment data. It is not a measured production experiment. Do not quote its NDCG, p95, dispatch-count, or freshness values as empirical findings.
+The measured CI benchmark is available from [workflow run 42959976828](https://github.com/Rohith-S636/polyfind/actions/runs/42959976828); download its `polyfind-measured-benchmark` artifact. It used 50 deterministic seed-42 products, 100 operations, one warm-up and three measured repetitions on MySQL 8.0.46. NDCG@10 was 0.867 for MySQL-only and 0.887 for both hybrid strategies. Mean query latency was 1.12 ms for MySQL-only, 2.79 ms for MySQL+Redis, 8.42 ms for fixed hybrid, and 9.42 ms for adaptive hybrid; hybrid p95 ranges were 11.82–14.97 ms and 10.73–21.55 ms respectively. These are descriptive measurements from one small synthetic workload, not production estimates or significance-tested results.
 
-A defensible benchmark must include the exact commit, environment snapshot, seed, dataset size, workload mix, update regime, repeated runs, raw observations, reviewed relevance judgments, and analysis output. Report p50/p95, variation/confidence intervals, freshness violation counts, and per-store dispatches. Include failures and negative results.
+The hybrid benchmark recorded a 43.18% non-verified query-response signal (114/264 observations). This measures stale or unverifiable derived candidates, not stale prices or stock presented: strict mode rejects stale/unverifiable candidates, and returned product fields are hydrated from MySQL. Treat it as a derived-index freshness limitation and discuss it openly.
+
+The relevance labels are manually checked against the seed-42 catalogue but are not independently annotated. The 0.020 NDCG@10 difference is not a significance test and does not establish general superiority. The older committed baseline JSON is a regression/visualization fixture only; do not quote its values as empirical findings.
+
+A defensible benchmark must include the exact commit, environment snapshot, seed, dataset size, workload mix, update regime, repeated runs, raw observations, independently reviewed relevance judgments, and analysis output. Report p50/p95, variation/confidence intervals, freshness signals, and per-store dispatches. Include failures and negative results.
 
 ## Limitations to volunteer before being asked
 
 - The catalogue is synthetic, not a licensed Indian retailer dataset.
 - The local feature-hashing vectorizer is lexical; it does not understand synonyms or intent like a pretrained language model.
-- The relevance qrels are provisional until independently reviewed.
+- The relevance qrels are manually checked against seed 42 but still provisional until independently reviewed.\n- The measured hybrid workload has a 43.18% non-verified derived-candidate response signal; strict mode rejects stale candidates, but this indicates index lag under updates.
 - Default fusion weights are not optimized.
 - Login throttling is process-local; horizontally scaled production requires a shared limiter.
 - Browser authentication uses an HttpOnly, SameSite=Strict cookie (Secure in production); deployment still needs a verified allowed-Origin/CSRF policy and secure HTTPS configuration.

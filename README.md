@@ -50,7 +50,7 @@ npm test
 npm run build
 ```
 
-The standard GitHub Actions workflow provisions disposable MySQL, Redis, and Neo4j services and runs the LanceDB persistence integration against a temporary path. Inspect the latest workflow run for the actual result; do not rely on historical test counts.
+The standard GitHub Actions workflow provisions disposable MySQL, Redis, and Neo4j services and runs the LanceDB persistence integration against a temporary path. It also migrates and seeds only the disposable CI database, then runs `npm run benchmark:integration` and uploads raw repeated-run observations plus provisional relevance evaluation. Inspect the latest workflow run and its benchmark artifact for actual results; do not rely on historical test counts.
 
 ## Local Docker database setup
 
@@ -138,7 +138,9 @@ The repository has previously been connected to a Render service, but a current 
 
 ## Reproducible benchmark artifact
 
-`npx tsx scripts/export-baseline-visualization.ts` exports the committed baseline fixture for chart/report formatting. This is a **fixture visualization**, not a new measured experiment. Do not cite its values as empirical performance results. The final report documents the required protocol for collecting raw measured runs.
+`npx tsx scripts/export-baseline-visualization.ts` exports the committed baseline fixture for chart/report formatting. This is a **fixture visualization**, not a new measured experiment. Do not cite its values as empirical performance results.
+
+The live benchmark runner is `npm run benchmark:integration`. It refuses to run unless `POLYFIND_BENCHMARK_DISPOSABLE=true` and the database name is exactly `polyfind_test`. The CI workflow provisions that disposable database, runs migrations and the deterministic seed, then uploads a JSON artifact with repeated-run raw query/update latencies, provider timings, cache-hit rates, freshness outcomes, environment metadata, and provisional qrels evaluation. Never point this command at an existing or production database.
 
 ## Active sprint and slice status
 

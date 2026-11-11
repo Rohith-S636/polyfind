@@ -27,7 +27,6 @@ import {
 import type { SearchRequest } from "../src/contracts/types.js";
 import type { RowDataPacket } from "mysql2/promise";
 import type { Neo4jGraphAdapter } from "../src/sync/neo4j-driver.js";
-import { PermanentOutboxError } from "../src/sync/outbox.js";
 
 loadEnvironment();
 

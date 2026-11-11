@@ -55,7 +55,7 @@ The seeded catalogue is generated deterministically using a fixed seed and is sy
 
 ## 5. Test and integration evidence
 
-Use the latest GitHub Actions workflow as the source of truth. The CI workflow is configured to provision disposable MySQL, Redis, and Neo4j services and to run LanceDB persistence integration using a temporary filesystem path. The MySQL integration test applies migrations only to the disposable CI database.
+Use the latest GitHub Actions workflow as the source of truth. The CI workflow provisions disposable MySQL, Redis, and Neo4j services, runs LanceDB persistence integration using a temporary filesystem path, then seeds and benchmarks only the disposable `polyfind_test` database. The `artifacts/polyfind-benchmark-*.json` artifact contains raw repeated-run query/update latencies, provider timings, cache-hit rates, freshness outcomes, environment metadata, and provisional qrels evaluation. The MySQL integration test applies migrations only to the disposable CI database.
 
 **Do not insert a test count or claim all integration checks passed until the latest workflow is green.** Record:
 - workflow run URL and commit SHA;
@@ -78,7 +78,7 @@ A defensible experiment must:
 6. include negative results, failures, and limitations;
 7. commit or attach the generated artifact and analysis script.
 
-No performance superiority claim is made in this draft until those artifacts are produced and independently checked.
+No performance superiority claim is made in this draft until the latest measured artifact is produced, independently checked, and interpreted against reviewed relevance judgments. CI measurements are containerized-run evidence, not a substitute for a separately described local hardware experiment.
 
 ## 7. Limitations and threats to validity
 

@@ -604,3 +604,33 @@ test("16. POST /api/brands and product variants require authentication and persi
     await api.stop();
   }
 });
+
+
+test("17. GET /api/brands and product variants expose persisted catalogue metadata", async () => {
+  const { api } = createTestServer();
+  const port = await api.start(0);
+  try {
+    await fetch(`http://127.0.0.1:${port}/api/brands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${AUTH_SECRET}` },
+      body: JSON.stringify({ id: "brand-read", name: "Read Brand", slug: "read-brand" }),
+    });
+    const brands = await fetch(`http://127.0.0.1:${port}/api/brands`);
+    assert.equal(brands.status, 200);
+    assert.equal(((await brands.json()) as any).items[0].id, "brand-read");
+
+    await fetch(`http://127.0.0.1:${port}/api/products/prod-001/variants`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${AUTH_SECRET}` },
+      body: JSON.stringify({ id: "variant-read", variantKey: "size", attributes: { size: "large" } }),
+    });
+    const variants = await fetch(`http://127.0.0.1:${port}/api/products/prod-001/variants`);
+    assert.equal(variants.status, 200);
+    assert.equal(((await variants.json()) as any).items[0].id, "variant-read");
+    const variant = await fetch(`http://127.0.0.1:${port}/api/variants/variant-read`);
+    assert.equal(variant.status, 200);
+    assert.equal(((await variant.json()) as any).item.attributes.size, "large");
+  } finally {
+    await api.stop();
+  }
+});

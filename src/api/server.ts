@@ -23,6 +23,8 @@ import {
   type CreateProductInput,
   type UpdateProductInput,
   type SellerInput,
+  type BrandInput,
+  type ProductVariantInput,
 } from "../catalog/index.js";
 import { SearchService } from "./search.js";
 import type { RedisConnectionStatus } from "../cache/redis-adapter.js";
@@ -372,6 +374,55 @@ async function handle(
           ...(hybrid !== undefined ? { hybrid } : {}),
         });
         sendJson(response, 200, result);
+        return;
+      }
+
+      if (url.pathname === "/api/brands") {
+        if (!checkMutationAuth(request, options.authSecret)) {
+          sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
+          return;
+        }
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) {
+          throw new CatalogValidationError("Request body must be a JSON object.");
+        }
+        const body = rawBody as Record<string, unknown>;
+        if (typeof body["id"] !== "string" || typeof body["name"] !== "string" || typeof body["slug"] !== "string") {
+          throw new CatalogValidationError("Brand requires string id, name, and slug.");
+        }
+        const input: BrandInput = {
+          id: body["id"], name: body["name"], slug: body["slug"],
+          ...(typeof body["description"] === "string" ? { description: body["description"] } : {}),
+        };
+        await relational.createBrand(input);
+        sendJson(response, 201, { item: input });
+        return;
+      }
+
+      const variantCreateMatch = /^\/api\/products\/([^/]+)\/variants$/.exec(url.pathname);
+      if (variantCreateMatch) {
+        if (!checkMutationAuth(request, options.authSecret)) {
+          sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
+          return;
+        }
+        const productId = decodeURIComponent(variantCreateMatch[1]!);
+        if (!(await options.catalog.getProduct(productId))) throw new NotFoundError("Product", productId);
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) {
+          throw new CatalogValidationError("Request body must be a JSON object.");
+        }
+        const body = rawBody as Record<string, unknown>;
+        if (typeof body["id"] !== "string" || typeof body["variantKey"] !== "string" ||
+            typeof body["attributes"] !== "object" || body["attributes"] === null || Array.isArray(body["attributes"])) {
+          throw new CatalogValidationError("Variant requires string id, string variantKey, and object attributes.");
+        }
+        const input: ProductVariantInput = {
+          id: body["id"], productId, variantKey: body["variantKey"],
+          attributes: body["attributes"] as Record<string, string>,
+          ...(typeof body["sku"] === "string" || body["sku"] === null ? { sku: body["sku"] as string | null } : {}),
+        };
+        await relational.createProductVariant(input);
+        sendJson(response, 201, { item: input });
         return;
       }
 

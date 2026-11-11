@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const baseUrl = process.env.POLYFIND_E2E_BASE_URL ?? "http://127.0.0.1:3000";
+const baseUrl = process.env.POLYFIND_E2E_BASE_URL ?? "http://localhost:3000";
 const bootstrapToken = process.env.POLYFIND_E2E_BOOTSTRAP_TOKEN ?? "ci-polyfind-bootstrap-token-with-more-than-32-characters";
 
 test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison and price history", async ({ browser }) => {

@@ -213,9 +213,11 @@ test(
         ["offer-foundation"],
       );
       assert.equal(deliveryRows.length, 6);
+      // MySQL ENUM ordering follows declaration order, not lexical order.
+      // Compare the complete target multiset across the create and update events.
       assert.deepEqual(
-        deliveryRows.slice(0, 3).map((row) => row["target_name"]),
-        ["lancedb", "neo4j", "redis"],
+        deliveryRows.map((row) => String(row["target_name"])).sort(),
+        ["lancedb", "lancedb", "neo4j", "neo4j", "redis", "redis"],
       );
 
       await assert.rejects(

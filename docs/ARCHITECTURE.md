@@ -89,3 +89,20 @@ API paths and shapes are proposed contracts; align implementation and tests befo
 - **Member A:** MySQL catalog/schema/transactions; relational correctness; retrieval contracts and baseline fusion; version metadata; freshness validation; planner baselines; deterministic workload/relevance metrics; failure/regression/security checks; statistical summaries; research claims; final acceptance.
 - **Member B:** Local development configuration; vector-store/embedding evaluation; seed fixture/validation; catalog UI; embedding ingestion; vector adapter; Neo4j graph/synchronization; Redis cache/invalidation; search API/UI integration; benchmark harness/ablation experiments; result visualization; report/demo.
 - **No module or slice is jointly owned.** Cross-module interfaces are agreed early; each owner develops against fixtures or mocks while other components are in progress. See `docs/PARALLEL_WORK_PLAN.md`.
+
+
+---
+
+## Current implementation architecture addendum (2026-11-11)
+
+The following is the approved current architecture and supersedes conflicting earlier draft diagrams or unresolved-option text:
+
+1. MySQL is the only authority for product facts, seller offers, price history, versions, users, roles, sessions, audit logs, and outbox records.
+2. Redis stores cache entries and reverse indexes. Cache failure degrades to authoritative reads; it must not make Redis authoritative.
+3. Neo4j is a derived graph projection. It is now registered as a production retrieval provider; direct text matches and one-hop category-neighbour matches contribute candidates. Candidate IDs are rehydrated and checked in MySQL.
+4. LanceDB is an embedded persistent vector index. Docker Compose mounts `/app/data/lancedb` to a named volume. The no-key default is a deterministic feature-hashing lexical vectorizer, not a pretrained transformer.
+5. Fusion uses weighted reciprocal-rank contributions (MySQL 0.50, vector 0.35, graph 0.15 by default). These weights are configurable in code and have not been empirically optimized.
+6. Outbox delivery to Redis, Neo4j, and LanceDB is asynchronous, retryable, and version-aware. MySQL writes do not depend on derived-store availability.
+7. The API exposes customer registration/login, admin bootstrap, and admin-only catalogue mutations. The browser currently uses session-scoped bearer-token storage; an HttpOnly cookie/CSRF implementation remains a production-hardening requirement.
+
+Do not claim a complete live four-store deployment until the latest CI run passes real MySQL, Redis, Neo4j, and LanceDB integration tests and a deployment smoke test verifies the deployed commit.

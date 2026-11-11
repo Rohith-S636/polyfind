@@ -53,3 +53,24 @@ Build a working search application and research prototype that coordinates relat
 | 5 | What freshness SLA applies to each field class? | Member A | Sprint 1 (`S1-04` / ADR-002) | Zero staleness for transactional facts (price/stock); bounded eventual consistency for descriptive metadata. |
 | 6 | Which baselines are feasible after the literature audit? | Member A | Sprint 1 (`S1-02` / `docs/research.md`) | Feasible baselines identified: MySQL-only, Fixed multi-store, Fixed hybrid, and TTL-only cache. |
 
+
+
+---
+
+## Approved scope and implementation baseline (2026-11-11)
+
+This addendum supersedes earlier draft statements that conflict with the decisions approved during implementation.
+
+### Locked decisions
+- Academic/personal project; commercial deployment is not the objective.
+- Target operating budget: ₹0. Use local Docker for the complete demonstration; do not assume a free hosting tier supplies persistent MySQL, Redis, Neo4j, and vector storage.
+- Modular monolith using Next.js, Node.js, and TypeScript.
+- MySQL is the authoritative source of truth.
+- Redis is the cache; Neo4j is the relationship store; LanceDB is the embedded vector store. Qdrant is excluded.
+- Synthetic deterministic catalogue data is acceptable for the academic demonstration, provided it is clearly labelled synthetic and includes categories, brands, sellers, variants, offers, and price history.
+- Public browsing/search is available without an account. Customer accounts may register/login. Only administrators may mutate the shared catalogue.
+- Search combines MySQL, vector, and graph candidates, applies weighted fusion, then hydrates and freshness-checks against MySQL.
+- Benchmarking must be reproducible and honest. Fixture values, mock measurements, and provisional relevance judgments must never be described as empirical deployment results.
+
+### Completion evidence
+The phase-by-phase acceptance criteria and current verified status are maintained in [13-phase master acceptance](13_PHASE_MASTER_ACCEPTANCE.md). A phase is complete only when its code, tests, documentation, and applicable integration evidence all pass. A green TypeScript build alone is insufficient.

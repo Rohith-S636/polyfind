@@ -22,6 +22,7 @@ import {
   type PaginatedProducts,
   type CreateProductInput,
   type UpdateProductInput,
+  type SellerInput,
 } from "../catalog/index.js";
 import { SearchService } from "./search.js";
 import type { RedisConnectionStatus } from "../cache/redis-adapter.js";
@@ -371,6 +372,32 @@ async function handle(
           ...(hybrid !== undefined ? { hybrid } : {}),
         });
         sendJson(response, 200, result);
+        return;
+      }
+
+      if (url.pathname === "/api/sellers") {
+        if (!checkMutationAuth(request, options.authSecret)) {
+          sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
+          return;
+        }
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) {
+          throw new CatalogValidationError("Request body must be a JSON object.");
+        }
+        const body = rawBody as Record<string, unknown>;
+        if (typeof body["id"] !== "string" || typeof body["name"] !== "string" || typeof body["slug"] !== "string") {
+          throw new CatalogValidationError("Seller requires string id, name, and slug.");
+        }
+        const status = body["status"];
+        if (status !== undefined && status !== "active" && status !== "inactive" && status !== "suspended") {
+          throw new CatalogValidationError("status must be active, inactive, or suspended.");
+        }
+        const input: SellerInput = {
+          id: body["id"], name: body["name"], slug: body["slug"],
+          ...(status ? { status } : {}),
+        };
+        const created = await relational.createSeller(input);
+        sendJson(response, 201, { item: created });
         return;
       }
 

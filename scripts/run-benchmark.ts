@@ -7,6 +7,8 @@ import {
   createVectorRuntimeFromEnvironment,
   generateWorkload,
   DEFAULT_QUERY_MIX,
+  BENCHMARK_QUERY_SET,
+  evaluateAllQueries,
   MySqlKeywordRetrievalProvider,
   Neo4jGraphRetrievalProvider,
   Neo4jOutboxTarget,
@@ -112,6 +114,7 @@ try {
   const keywordProvider = new MySqlKeywordRetrievalProvider(pool);
   const graphProvider = new Neo4jGraphRetrievalProvider(graph as Neo4jGraphAdapter);
   const mysqlOnly = new SearchService({ catalog, keywordProvider, hybrid: false });
+  const mysqlRedis = new SearchService({ catalog, keywordProvider, cache: redis, hybrid: false });
   const fixedHybrid = new SearchService({
     catalog, keywordProvider, semanticProvider, graphProvider,
     hybrid: true, plannerMode: "fixed-all-stores",
@@ -127,11 +130,11 @@ try {
       const response = await search.search(request);
       return {
         elapsedMs: response.timings.totalMs,
-        storeTimings: {
+        ...(response.cacheHit ? {} : { storeTimings: {
           mysqlMs: response.sourceTimings?.mysql,
           vectorMs: response.sourceTimings?.vector,
           graphMs: response.sourceTimings?.graph,
-        },
+        } }),
         cacheHit: response.cacheHit,
         freshnessViolation: response.freshness.status !== "verified",
       };
@@ -157,13 +160,34 @@ try {
     queryMix: DEFAULT_QUERY_MIX,
   };
   const runner = new RepeatedBenchmarkRunner();
+  const targets = [
+    { name: "mysql-only", service: mysqlOnly, cacheState: "cold" as const },
+    { name: "mysql-redis-cache", service: mysqlRedis, cacheState: "warm" as const },
+    { name: "fixed-weighted-hybrid", service: fixedHybrid, cacheState: "cold" as const },
+    { name: "adaptive-weighted-hybrid-cache", service: adaptiveHybrid, cacheState: "warm" as const },
+  ];
   const artifact = await runner.run(
     { runCount, warmupRuns: 1, seed, workloadId: workloadConfig.workloadId, datasetSize, totalOperations },
-    [mysqlOnly, fixedHybrid, adaptiveHybrid].map((service) => ({
-      target: makeTarget(service === mysqlOnly ? "mysql-only" : service === fixedHybrid ? "fixed-weighted-hybrid" : "adaptive-weighted-hybrid-cache", service),
+    targets.map(({ name, service, cacheState }) => ({
+      target: makeTarget(name, service),
+      cacheState,
       createWorkload: (_runIndex, workloadSeed) => generateWorkload({ ...workloadConfig, seed: workloadSeed }).operations,
     })),
   );
+  const relevance = Object.fromEntries(await Promise.all(targets.map(async ({ name, service }) => {
+    const resultsByQuery: Record<string, string[]> = {};
+    for (const query of BENCHMARK_QUERY_SET) {
+      const response = await service.search({
+        query: query.queryText,
+        filters: query.filters ?? {},
+        page: 1,
+        limit: 10,
+        freshnessMode: "strict",
+      });
+      resultsByQuery[query.queryId] = response.items.map((item) => item.product.id);
+    }
+    return [name, evaluateAllQueries(resultsByQuery)];
+  })));
 
   const outputPath = process.env.POLYFIND_BENCHMARK_OUTPUT
     ?? path.resolve("artifacts", `polyfind-benchmark-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
@@ -178,7 +202,9 @@ try {
       productsIndexedToLanceDb: indexed,
       localVectorizer: embedder.modelName,
       fusionWeights: { mysql: 0.5, vector: 0.35, graph: 0.15 },
-      strategies: ["mysql-only", "fixed-weighted-hybrid", "adaptive-weighted-hybrid-cache"],
+      strategies: targets.map((target) => target.name),
+      provisionalRelevanceEvaluation: relevance,
+      relevanceJudgments: "provisional hand-authored fixture labels; not independently reviewed research qrels",
       notes: "Measured disposable CI benchmark. No production database was used. Workload and environment metadata are included in this artifact.",
     },
   }, null, 2), "utf8");

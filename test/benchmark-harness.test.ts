@@ -15,7 +15,7 @@ test("calculateLatencyQuantiles computes accurate median (p50), p95, min, max, a
 
   assert.strictEqual(quantiles.minMs, 10);
   assert.strictEqual(quantiles.maxMs, 100);
-  assert.strictEqual(quantiles.medianMs, 60); // 50th percentile (idx 5)
+  assert.strictEqual(quantiles.medianMs, 55); // conventional median of the two middle observations
   assert.strictEqual(quantiles.p95Ms, 100); // 95th percentile (idx 9)
   assert.strictEqual(quantiles.meanMs, 55);
 });

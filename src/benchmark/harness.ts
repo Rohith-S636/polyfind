@@ -33,6 +33,9 @@ export interface BenchmarkStrategyMetrics {
   totalQueries: number;
   totalUpdates: number;
   latencyQuantiles: LatencyQuantiles;
+  /** Raw observations are retained so the report can be independently recomputed. */
+  rawQueryLatenciesMs: number[];
+  rawUpdateLatenciesMs: number[];
   perStoreTimings: {
     mysqlAvgMs: number;
     redisAvgMs: number;
@@ -72,16 +75,21 @@ export function calculateLatencyQuantiles(samples: number[]): LatencyQuantiles {
   const sorted = [...samples].sort((a, b) => a - b);
   const n = sorted.length;
 
+  // Nearest-rank percentile; the median is computed separately below using
+  // the conventional midpoint for even-sized samples.
   const getPercentile = (p: number): number => {
-    const idx = Math.min(n - 1, Math.max(0, Math.floor((p / 100) * n)));
+    const idx = Math.min(n - 1, Math.max(0, Math.ceil((p / 100) * n) - 1));
     return sorted[idx]!;
   };
+  const median = n % 2 === 0
+    ? (sorted[n / 2 - 1]! + sorted[n / 2]!) / 2
+    : sorted[Math.floor(n / 2)]!;
 
   const sum = sorted.reduce((acc, val) => acc + val, 0);
 
   return {
     minMs: Math.round(sorted[0]! * 100) / 100,
-    medianMs: Math.round(getPercentile(50) * 100) / 100,
+    medianMs: Math.round(median * 100) / 100,
     p90Ms: Math.round(getPercentile(90) * 100) / 100,
     p95Ms: Math.round(getPercentile(95) * 100) / 100,
     p99Ms: Math.round(getPercentile(99) * 100) / 100,
@@ -125,6 +133,8 @@ export class BenchmarkHarness {
     const cacheState = options.cacheState ?? "cold";
     const startOverall = performance.now();
     const latencies: number[] = [];
+    const queryLatencies: number[] = [];
+    const updateLatencies: number[] = [];
 
     let totalQueries = 0;
     let totalUpdates = 0;
@@ -142,6 +152,7 @@ export class BenchmarkHarness {
         totalQueries += 1;
         const res = await target.executeQuery(op.request);
         latencies.push(res.elapsedMs);
+        queryLatencies.push(res.elapsedMs);
 
         if (res.cacheHit !== undefined) {
           if (res.cacheHit) cacheHits += 1;
@@ -163,6 +174,7 @@ export class BenchmarkHarness {
         if (target.executeUpdate) {
           const res = await target.executeUpdate(op.productId, op.patch);
           latencies.push(res.elapsedMs);
+          updateLatencies.push(res.elapsedMs);
         }
       }
     }
@@ -178,6 +190,8 @@ export class BenchmarkHarness {
       totalQueries,
       totalUpdates,
       latencyQuantiles: quantiles,
+      rawQueryLatenciesMs: queryLatencies,
+      rawUpdateLatenciesMs: updateLatencies,
       perStoreTimings: {
         mysqlAvgMs: Math.round((totalMysqlMs / queryCountSafe) * 100) / 100,
         redisAvgMs: Math.round((totalRedisMs / queryCountSafe) * 100) / 100,

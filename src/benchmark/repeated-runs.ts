@@ -37,6 +37,7 @@ export interface RepeatedBenchmarkArtifact {
 
 export interface RepeatedBenchmarkTarget {
   target: BenchmarkExecutionTarget;
+  cacheState?: "cold" | "warm";
   createWorkload: (runIndex: number, seed: number) => WorkloadOperation[];
 }
 
@@ -83,7 +84,7 @@ export class RepeatedBenchmarkRunner {
       for (let runIndex = 0; runIndex < runCount; runIndex += 1) {
         const workload = entry.createWorkload(runIndex, configuration.seed);
         rawRuns.push(
-          await this.harness.runWorkload(entry.target, workload, { cacheState: "cold" }),
+          await this.harness.runWorkload(entry.target, workload, { cacheState: entry.cacheState ?? "cold" }),
         );
       }
 

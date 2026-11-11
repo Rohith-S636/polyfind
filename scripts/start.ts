@@ -3,6 +3,9 @@ import {
   createApiServer,
   InMemoryCatalog,
   SearchService,
+  MySqlKeywordRetrievalProvider,
+  RelationalRepository,
+  InMemoryRelationalStore,
   generateSeedDataset,
   CatalogRepository,
   asCatalogReader,
@@ -30,10 +33,15 @@ loadEnvironment();
 const apiPort = Number(process.env.API_PORT ?? 3001);
 const webPort = Number(process.env.PORT ?? 3000);
 const mode = process.env.CATALOG_MODE ?? "live";
+const authSecret = process.env.AUTH_SECRET?.trim();
+if (mode === "live" && (!authSecret || authSecret.length < 32 || ["replace-in-production", "change-me"].includes(authSecret))) {
+  throw new Error("Live mode requires AUTH_SECRET to be a unique secret of at least 32 characters.");
+}
 
 let catalog: CatalogReader;
 let catalogStatus: "available" | "not-configured" | "unavailable";
 let databasePool: ReturnType<typeof createDatabasePool> | undefined;
+let catalogRepository: CatalogRepository | undefined;
 const redis = process.env.REDIS_URL ? new RedisCacheAdapter(process.env.REDIS_URL) : undefined;
 let redisStatus: "available" | "not-configured" | "unavailable" = "not-configured";
 const { graph, status: graphStatus } = await initializeNeo4j();
@@ -57,7 +65,8 @@ if (mode === "demo") {
   try {
     databasePool = createDatabasePool();
     await databasePool.query("SELECT 1");
-    catalog = asCatalogReader(new CatalogRepository(databasePool, redis));
+    catalogRepository = new CatalogRepository(databasePool, redis);
+    catalog = asCatalogReader(catalogRepository);
     catalogStatus = "available";
   } catch {
     await redis?.close();
@@ -94,11 +103,17 @@ const outboxTargets = [
 const outboxWorker = databasePool && outboxTargets.length > 0
   ? new OutboxWorker({ store: new MySqlOutboxStore(databasePool), targets: outboxTargets })
   : undefined;
+const relational = databasePool ? new RelationalRepository(databasePool, redis) : new InMemoryRelationalStore();
 const apiServer = createApiServer({
+  relational,
+  authSecret,
   catalog,
   search: new SearchService({
     catalog,
+    ...(databasePool ? { keywordProvider: new MySqlKeywordRetrievalProvider(databasePool) } : {}),
     ...(semanticProvider ? { semanticProvider } : {}),
+    ...(redis ? { cache: redis } : {}),
+    hybrid: Boolean(semanticProvider),
   }),
   dependencyStatus: {
     catalog: catalogStatus,
@@ -146,6 +161,7 @@ const cleanup = async () => {
   await redis?.close();
   await closeNeo4j(graph);
   await vector.close();
+  await databasePool?.end();
   nextProc.kill("SIGINT");
   process.exit(0);
 };

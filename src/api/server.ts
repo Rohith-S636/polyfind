@@ -271,7 +271,7 @@ async function handle(
   }
 
   const url = new URL(request.url ?? "/", "http://localhost");
-  const relational = options.relational ?? new InMemoryRelationalStore();
+  const relational = options.relational!;
 
   try {
     // PUT / PATCH endpoints
@@ -301,7 +301,6 @@ async function handle(
         if (body["validFrom"] !== undefined) patch.validFrom = String(body["validFrom"]);
         if (body["validUntil"] !== undefined) patch.validUntil = body["validUntil"] === null ? null : String(body["validUntil"]);
         if (body["changeReason"] !== undefined) patch.changeReason = String(body["changeReason"]);
-        if (body["actorUserId"] !== undefined) patch.actorUserId = String(body["actorUserId"]);
         if (body["requestId"] !== undefined) patch.requestId = String(body["requestId"]);
 
         const updated = await relational.updateOffer(offerId, patch, expectedVersion);
@@ -371,7 +370,6 @@ async function handle(
           validFrom: typeof body["validFrom"] === "string" ? body["validFrom"] : undefined,
           validUntil: typeof body["validUntil"] === "string" ? body["validUntil"] : null,
           changeReason: typeof body["changeReason"] === "string" ? body["changeReason"] : undefined,
-          actorUserId: typeof body["actorUserId"] === "string" ? body["actorUserId"] : undefined,
           requestId: typeof body["requestId"] === "string" ? body["requestId"] : undefined,
         };
 
@@ -617,9 +615,16 @@ async function handle(
 }
 
 export function createApiServer(options: ApiServerOptions): ApiServer {
+  if (options.mode === "live" && !options.relational) {
+    throw new Error("Live API mode requires an explicit persistent relational repository.");
+  }
+  const resolvedOptions: ApiServerOptions = {
+    ...options,
+    relational: options.relational ?? new InMemoryRelationalStore(),
+  };
   const requestCounts = new Map<string, { startedAt: number; count: number }>();
   const server = createServer((request, response) => {
-    void handle(request, response, options, requestCounts);
+    void handle(request, response, resolvedOptions, requestCounts);
   });
   return {
     server,

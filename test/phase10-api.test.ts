@@ -82,7 +82,7 @@ function createTestServer() {
         currency: "USD",
         price: 145.00,
         stockQuantity: 0,
-        availability: "out_of_stock",
+        availability: "unavailable",
         validFrom: "2026-01-01T00:00:00.000Z",
         validUntil: null,
         version: 1,

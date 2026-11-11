@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createApiServer, InMemoryCatalog } from "../src/index.js";
+import { AuthenticationError } from "../src/auth/session-auth.js";
 
 test("login endpoint applies a per-IP and per-email attempt limit", async () => {
   let loginCalls = 0;
@@ -9,13 +10,9 @@ test("login endpoint applies a per-IP and per-email attempt limit", async () => 
     rateLimit: { windowMs: 60_000, maxRequests: 100 },
     auth: {
       authenticate: async () => null,
-      login: async (email) => {
+      login: async (_email) => {
         loginCalls += 1;
-        return {
-          token: "test-session-token-that-is-long-enough-1234567890",
-          expiresAt: new Date(Date.now() + 60_000).toISOString(),
-          user: { id: "user-1", email, roles: ["customer"] },
-        };
+        throw new AuthenticationError("Email or password is incorrect.");
       },
     },
   });
@@ -27,7 +24,7 @@ test("login endpoint applies a per-IP and per-email attempt limit", async () => 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: "same@example.test", password: "password" }),
       });
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 401);
     }
     const limited = await fetch("http://127.0.0.1:" + port + "/api/auth/login", {
       method: "POST",

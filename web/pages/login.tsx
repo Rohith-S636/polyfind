@@ -2,7 +2,7 @@ import React, { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { saveSession, readApiError } from "../lib/auth";
-import type { AuthSession } from "../lib/auth-types";
+import type { AuthSessionResponse } from "../lib/auth-types";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,11 +20,12 @@ export default function LoginPage() {
     try {
       const response = await fetch(bootstrapMode ? "/api/auth/bootstrap" : "/api/auth/login", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(bootstrapMode ? { email, password, bootstrapToken } : { email, password }),
       });
       if (!response.ok) throw new Error(await readApiError(response, "Authentication failed."));
-      const session = await response.json() as AuthSession;
+      const session = await response.json() as AuthSessionResponse;
       saveSession(session);
       await router.replace(session.user.roles.includes("admin") ? "/admin" : "/");
     } catch (caught) {

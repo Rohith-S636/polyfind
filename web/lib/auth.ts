@@ -1,28 +1,18 @@
-import type { AuthSession } from "./auth-types";
+import type { AuthSessionResponse } from "./auth-types";
 
-const SESSION_KEY = "polyfind.session.token";
-
-export function saveSession(session: AuthSession): void {
-  if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(SESSION_KEY, session.token);
+/** Browser authentication uses an HttpOnly SameSite session cookie. */
+export function saveSession(_session: AuthSessionResponse): void {
+  // The API sets the HttpOnly cookie; JavaScript deliberately cannot read it.
 }
 
 export function clearSession(): void {
-  if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(SESSION_KEY);
-}
-
-export function getSessionToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.sessionStorage.getItem(SESSION_KEY);
+  // The logout endpoint revokes and clears the HttpOnly cookie.
 }
 
 export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
-  const token = getSessionToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
-  return fetch(input, { ...init, headers });
+  return fetch(input, { ...init, credentials: "same-origin", headers });
 }
 
 export async function readApiError(response: Response, fallback: string): Promise<string> {

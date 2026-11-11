@@ -131,9 +131,33 @@ function consumeAuthAttempt(
 
 function getBearerToken(request: IncomingMessage): string | null {
   const header = request.headers["authorization"];
-  if (typeof header !== "string" || !header.toLowerCase().startsWith("bearer ")) return null;
-  const token = header.slice(7).trim();
-  return token.length > 0 ? token : null;
+  if (typeof header === "string" && header.toLowerCase().startsWith("bearer ")) {
+    const token = header.slice(7).trim();
+    if (token.length > 0) return token;
+  }
+  const cookieHeader = request.headers.cookie;
+  if (typeof cookieHeader !== "string") return null;
+  const cookie = cookieHeader.split(";").map((part) => part.trim())
+    .find((part) => part.startsWith("polyfind_session="));
+  if (!cookie) return null;
+  const value = cookie.slice("polyfind_session=".length);
+  try { return decodeURIComponent(value) || null; } catch { return null; }
+}
+
+function setSessionCookie(response: ServerResponse, session: AuthSession): void {
+  const maxAge = Math.max(0, Math.floor((Date.parse(session.expiresAt) - Date.now()) / 1000));
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  response.setHeader("Set-Cookie", `polyfind_session=${encodeURIComponent(session.token)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${maxAge}${secure}`);
+}
+
+function clearSessionCookie(response: ServerResponse): void {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  response.setHeader("Set-Cookie", `polyfind_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT${secure}`);
+}
+
+function sendAuthSession(response: ServerResponse, status: number, session: AuthSession): void {
+  setSessionCookie(response, session);
+  sendJson(response, status, { expiresAt: session.expiresAt, user: session.user });
 }
 
 async function checkMutationAuth(request: IncomingMessage, auth?: ApiAuthService): Promise<AuthPrincipal | null> {
@@ -508,7 +532,7 @@ async function handle(
         }
         const session = await options.auth.bootstrapAdmin(body["email"], body["password"], body["bootstrapToken"]);
         authAttempts.delete(attemptKey);
-        sendJson(response, 201, session);
+        sendAuthSession(response, 201, session);
         return;
       }
 
@@ -552,7 +576,7 @@ async function handle(
         }
         const session = await options.auth.login(body["email"], body["password"]);
         authAttempts.delete(attemptKey);
-        sendJson(response, 200, session);
+        sendAuthSession(response, 200, session);
         return;
       }
 
@@ -560,6 +584,7 @@ async function handle(
         const token = getBearerToken(request);
         if (!token || !options.auth?.logout) throw new AuthenticationError("Authentication required.");
         await options.auth.logout(token);
+        clearSessionCookie(response);
         sendJson(response, 200, { success: true });
         return;
       }

@@ -2,7 +2,7 @@ import React, { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { saveSession, readApiError } from "../lib/auth";
-import type { AuthSession } from "../lib/auth-types";
+import type { AuthSessionResponse } from "../lib/auth-types";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,11 +18,12 @@ export default function RegisterPage() {
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ email, password }),
       });
       if (!response.ok) throw new Error(await readApiError(response, "Account registration failed."));
-      const session = await response.json() as AuthSession;
+      const session = await response.json() as AuthSessionResponse;
       saveSession(session);
       await router.replace("/");
     } catch (caught) {

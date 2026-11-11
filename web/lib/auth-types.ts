@@ -4,8 +4,7 @@ export interface AuthPrincipal {
   roles: string[];
 }
 
-export interface AuthSession {
-  token: string;
+export interface AuthSessionResponse {
   expiresAt: string;
   user: AuthPrincipal;
 }

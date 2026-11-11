@@ -576,3 +576,31 @@ test("15. POST /api/sellers creates a seller only with catalogue mutation creden
     await api.stop();
   }
 });
+
+
+test("16. POST /api/brands and product variants require authentication and persist through the relational store", async () => {
+  const { api } = createTestServer();
+  const port = await api.start(0);
+  try {
+    const brand = await fetch(`http://127.0.0.1:${port}/api/brands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${AUTH_SECRET}` },
+      body: JSON.stringify({ id: "brand-new", name: "New Brand", slug: "new-brand", description: "Test brand" }),
+    });
+    assert.equal(brand.status, 201);
+    const brandJson = (await brand.json()) as any;
+    assert.equal(brandJson.item.id, "brand-new");
+
+    const variant = await fetch(`http://127.0.0.1:${port}/api/products/prod-001/variants`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${AUTH_SECRET}` },
+      body: JSON.stringify({ id: "variant-new", variantKey: "color", attributes: { color: "blue" }, sku: "SKU-BLUE" }),
+    });
+    assert.equal(variant.status, 201);
+    const variantJson = (await variant.json()) as any;
+    assert.equal(variantJson.item.productId, "prod-001");
+    assert.equal(variantJson.item.attributes.color, "blue");
+  } finally {
+    await api.stop();
+  }
+});

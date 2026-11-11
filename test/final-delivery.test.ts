@@ -1,130 +1,70 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import {
-  createDefaultBaselineArtifact,
-  loadBaselineArtifact,
-  saveBaselineArtifact,
-  type BaselineComparisonArtifact,
-} from "../src/index.js";
+import { loadBaselineArtifact, type BaselineComparisonArtifact } from "../src/index.js";
 
-test("docs/FINAL_REPORT.md exists and covers all required DBMS capstone sections", async () => {
-  const reportPath = path.resolve(process.cwd(), "docs/FINAL_REPORT.md");
-  const content = await fs.readFile(reportPath, "utf-8");
-
-  // Verify structure and problem formulation
-  assert.ok(content.includes("# PolyFind: Freshness-Constrained Adaptive Retrieval Across Heterogeneous Databases"));
-  assert.ok(content.includes("Abstract"));
-  assert.ok(content.includes("Problem Formulation & DBMS Motivation"));
-  assert.ok(content.includes("System Architecture & Heterogeneous Store Contracts"));
-  assert.ok(content.includes("MySQL 8.0: Authoritative Transactional Store"));
-  assert.ok(content.includes("Redis 7.0: Version-Aware Cache Tier"));
-  assert.ok(content.includes("Vector Retrieval Engine: 384-Dimensional Semantic Store"));
-  assert.ok(content.includes("Neo4j 5.x: Knowledge Graph Tier"));
-  assert.ok(content.includes("Experimental Methodology & Benchmark Setup"));
-  assert.ok(content.includes("Ablation Studies & Sensitivity Analysis"));
-  assert.ok(content.includes("Documented Trade-offs, Failures & Threats to Validity"));
-  assert.ok(content.includes("Clean Room Setup & Reproducibility Guide"));
+test("final report describes the actual academic implementation and DBMS architecture", async () => {
+  const content = await fs.readFile(path.resolve(process.cwd(), "docs/FINAL_REPORT.md"), "utf-8");
+  for (const section of [
+    "# PolyFind — Academic Implementation and Evaluation Report",
+    "## Abstract",
+    "## 1. Problem and objectives",
+    "## 2. Approved architecture",
+    "MySQL",
+    "Redis",
+    "Neo4j",
+    "LanceDB",
+    "## 3. Data and provenance",
+    "## 4. Correctness and security design",
+    "## 5. Test and integration evidence",
+    "## 6. Benchmark methodology and reporting",
+    "## 7. Limitations and threats to validity",
+    "## 8. Reproducibility",
+  ]) assert.ok(content.includes(section), `report missing: ${section}`);
 });
 
-test("docs/DEMO_SCRIPT.md covers structured search, semantic/graph retrieval, stale-update scenario, and benchmark output", async () => {
-  const demoPath = path.resolve(process.cwd(), "docs/DEMO_SCRIPT.md");
-  const content = await fs.readFile(demoPath, "utf-8");
-
-  // Verify timed segments and presenters
-  assert.ok(content.includes("Timed Walkthrough for DBMS Capstone Evaluation"));
-  assert.ok(content.includes("Part 1: Clean Setup & Environment Verification"));
-  assert.ok(content.includes("Part 2: Structured Catalog Search & Relational Authority"));
-  assert.ok(content.includes("Part 3: Semantic Vector Search & Graph Candidate Retrieval"));
-  assert.ok(content.includes("Part 4: Stale-Update Scenario & Freshness Validation"));
-  assert.ok(content.includes("Part 5: Benchmark Execution & Visualization"));
-
-  // Verify core technical demonstrations
-  assert.ok(content.toLowerCase().includes("structured filter query"));
-  assert.ok(content.includes("384-dimensional"));
-  assert.ok(content.includes("[:IN_CATEGORY]"));
-  assert.ok(content.includes("STALE READ VIOLATION"));
-  assert.ok(content.includes("automatically invalidated"));
-  assert.ok(content.includes("export-baseline-visualization.ts"));
-  assert.ok(content.includes("Potential Viva Q&A Preparation"));
+test("15-minute demo covers public search, seller comparison, auth, freshness, and CI evidence", async () => {
+  const content = await fs.readFile(path.resolve(process.cwd(), "docs/DEMO_SCRIPT.md"), "utf-8");
+  for (const section of [
+    "15-minute academic demonstration",
+    "Public search experience",
+    "Seller price comparison and history",
+    "Customer and administrator access",
+    "Multi-store retrieval and freshness",
+    "Database and correctness evidence",
+    "Extended viva backup",
+  ]) assert.ok(content.includes(section), `demo missing: ${section}`);
+  assert.match(content, /synthetic/i);
+  assert.match(content, /feature-hashing/i);
+  assert.match(content, /do not present it as passed/i);
 });
 
-test("Report and demo script metrics correspond directly to committed benchmark artifacts", async () => {
+test("benchmark fixture is explicitly treated as fixture data, not empirical evidence", async () => {
   const fixturePath = path.resolve(process.cwd(), "test/fixtures/baseline-comparison.json");
   const artifact: BaselineComparisonArtifact = await loadBaselineArtifact(fixturePath);
-  const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "polyfind-baseline-"));
-  const generatedPath = path.join(temporaryDirectory, "baseline-comparison.json");
+  const report = await fs.readFile(path.resolve(process.cwd(), "docs/FINAL_REPORT.md"), "utf-8");
+  const demo = await fs.readFile(path.resolve(process.cwd(), "docs/DEMO_SCRIPT.md"), "utf-8");
+  assert.ok(artifact.environment.cpuModel.length > 0);
+  assert.match(report, /fixture.*not.*empirical|not.*empirical.*fixture/i);
+  assert.match(report, /no performance superiority claim/i);
+  assert.match(demo, /fixture benchmark numbers as measured results/i);
+  assert.doesNotMatch(report, /NDCG@10 of 0\.880|p95.*2\.90 ms|18\.5%.*stale/i);
+});
 
-  try {
-    await saveBaselineArtifact(generatedPath, createDefaultBaselineArtifact());
-    const generatedArtifact = await loadBaselineArtifact(generatedPath);
-    const fixtureMethod = artifact.methods.find((method) => method.methodId === "polyfind-adaptive");
-    const generatedMethod = generatedArtifact.methods.find((method) => method.methodId === "polyfind-adaptive");
-    assert.deepEqual(generatedMethod, fixtureMethod);
-  } finally {
-    await fs.rm(temporaryDirectory, { recursive: true, force: true });
+test("report includes limitations and no unsupported model/deployment claims", async () => {
+  const content = await fs.readFile(path.resolve(process.cwd(), "docs/FINAL_REPORT.md"), "utf-8");
+  assert.match(content, /synthetic/i);
+  assert.match(content, /not a pretrained transformer/i);
+  assert.match(content, /process-local throttling/i);
+  assert.match(content, /HttpOnly/i);
+  assert.match(content, /public hosting is not certified/i);
+});
+
+test("clean setup commands are documented and valid", async () => {
+  const content = await fs.readFile(path.resolve(process.cwd(), "README.md"), "utf-8");
+  for (const command of ["npm ci", "npm install", "npm run typecheck", "npm run typecheck:scripts", "npm test", "npm run build", "npm run migrate", "npm run seed"]) {
+    assert.ok(content.includes(command), `README missing command: ${command}`);
   }
-
-  const reportPath = path.resolve(process.cwd(), "docs/FINAL_REPORT.md");
-  const reportContent = await fs.readFile(reportPath, "utf-8");
-
-  const demoPath = path.resolve(process.cwd(), "docs/DEMO_SCRIPT.md");
-  const demoContent = await fs.readFile(demoPath, "utf-8");
-
-  const polyfindMethod = artifact.methods.find((m) => m.methodId === "polyfind-adaptive");
-  assert.ok(polyfindMethod);
-
-  // NDCG@10
-  const ndcgStr = polyfindMethod.relevance.ndcgAt10.toFixed(3);
-  assert.ok(reportContent.includes(ndcgStr));
-  assert.ok(demoContent.includes(ndcgStr));
-
-  // Violation rate
-  assert.ok(reportContent.includes("0.0%"));
-  assert.ok(demoContent.includes("0.0%"));
-
-  // Latency p95
-  const p95Str = `${polyfindMethod.latency.p95Ms.toFixed(2)} ms`;
-  assert.ok(reportContent.includes(p95Str));
-  assert.ok(demoContent.includes(p95Str));
-
-  // Store ops
-  const opsStr = polyfindMethod.resourceCost.storeDispatchesPerQuery.toFixed(2);
-  assert.ok(reportContent.includes(opsStr));
-  assert.ok(demoContent.includes(opsStr));
-});
-
-test("Report describes failures, negative ablations, and limitations as well as successes", async () => {
-  const reportPath = path.resolve(process.cwd(), "docs/FINAL_REPORT.md");
-  const content = await fs.readFile(reportPath, "utf-8");
-
-  // Check documented regression (+1.10 ms p95 latency penalty)
-  assert.ok(content.includes("1.10 ms p95 latency penalty"));
-
-  // Check negative ablation results
-  assert.ok(content.includes("4.5x latency explosion"));
-  assert.ok(content.includes("52.3% relevance drop"));
-  assert.ok(content.includes("24% of reads violate transactional correctness"));
-
-  // Check inconclusive result
-  assert.ok(content.includes("Inconclusive"));
-  assert.ok(content.includes("Graph Traversal Utility on Short Queries"));
-
-  // Check threats to validity
-  assert.ok(content.includes("Threats to Internal and External Validity"));
-  assert.ok(content.includes("Synthetic Query Workload"));
-  assert.ok(content.includes("Local Co-located Storage vs Distributed Networks"));
-});
-
-test("Clean setup commands are documented and valid", async () => {
-  const reportPath = path.resolve(process.cwd(), "docs/FINAL_REPORT.md");
-  const content = await fs.readFile(reportPath, "utf-8");
-
-  assert.ok(content.includes("npm install"));
-  assert.ok(content.includes("cp .env.example .env"));
-  assert.ok(content.includes("npm run typecheck"));
-  assert.ok(content.includes("npm test"));
-  assert.ok(content.includes("npm run seed"));
+  assert.match(content, /Copy-Item \.env\.example \.env/);
 });

@@ -59,15 +59,13 @@ test("validateEnvironment succeeds when required variables are present", () => {
   assert.strictEqual(config.redisUrl, "redis://localhost:6379");
 });
 
-test(".env.example contains only variable names and non-usable placeholders", () => {
+test(".env.example documents the approved MySQL, Redis, Neo4j, and LanceDB settings without real secrets", () => {
   const envExample = fs.readFileSync(envExamplePath, "utf-8");
-  assert.ok(envExample.includes("DATABASE_URL"));
-  assert.ok(envExample.includes("REDIS_URL"));
-  assert.ok(envExample.includes("NEO4J_URI"));
-  assert.ok(envExample.includes("VECTOR_STORE_PROVIDER"));
-  assert.ok(envExample.includes("EMBEDDING_PROVIDER"));
-
-  // Check no realistic private keys or real tokens exist
+  for (const key of ["DATABASE_URL", "MYSQL_PASSWORD", "MYSQL_ROOT_PASSWORD", "REDIS_URL", "NEO4J_URI", "NEO4J_PASSWORD", "LANCEDB_PATH", "POLYFIND_LOCAL_EMBEDDINGS", "EMBEDDING_ENDPOINT"]) {
+    assert.ok(envExample.includes(key), `missing approved environment key: ${key}`);
+  }
+  assert.ok(!envExample.includes("QDRANT"));
+  assert.ok(!envExample.includes("VECTOR_STORE_URL"));
   assert.strictEqual(envExample.includes("sk-"), false);
   assert.strictEqual(envExample.includes("BEGIN PRIVATE KEY"), false);
 });

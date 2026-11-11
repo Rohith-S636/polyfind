@@ -42,7 +42,7 @@ test("README, viva preparation, and acceptance documents describe an honest clea
     read("docs/sprints/sprint-06.md"),
   ]);
 
-  for (const command of ["git clone", "npm install", "npm run typecheck", "npm test", "npm run migrate", "npm run seed", "export-baseline-visualization"]) {
+  for (const command of ["git clone", "npm install", "npm ci", "npm run typecheck", "npm run typecheck:scripts", "npm test", "npm run build", "npm run migrate", "npm run seed", "export-baseline-visualization"]) {
     assert.ok(readme.includes(command), `README is missing clean-room step: ${command}`);
   }
   for (const heading of ["## One-minute project summary", "## Architecture decisions to explain", "## Freshness contract defense", "## Limitations to volunteer before being asked"]) {

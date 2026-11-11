@@ -24,6 +24,7 @@ import {
   UnavailableOutboxTarget,
   LazyOutboxTarget,
   PermanentOutboxError,
+  SessionAuthService,
 } from "../src/index.js";
 import type { CatalogReader } from "../src/contracts/types.js";
 import type { Neo4jGraphAdapter } from "../src/sync/neo4j-driver.js";
@@ -33,10 +34,6 @@ loadEnvironment();
 const apiPort = Number(process.env.API_PORT ?? 3001);
 const webPort = Number(process.env.PORT ?? 3000);
 const mode = process.env.CATALOG_MODE ?? "live";
-const authSecret = process.env.AUTH_SECRET?.trim();
-if (mode === "live" && (!authSecret || authSecret.length < 32 || ["replace-in-production", "change-me"].includes(authSecret))) {
-  throw new Error("Live mode requires AUTH_SECRET to be a unique secret of at least 32 characters.");
-}
 
 let catalog: CatalogReader;
 let catalogStatus: "available" | "not-configured" | "unavailable";
@@ -104,6 +101,7 @@ const outboxWorker = databasePool && outboxTargets.length > 0
   ? new OutboxWorker({ store: new MySqlOutboxStore(databasePool), targets: outboxTargets })
   : undefined;
 const relational = databasePool ? new RelationalRepository(databasePool, redis) : new InMemoryRelationalStore();
+const auth = databasePool ? new SessionAuthService(databasePool, process.env.AUTH_BOOTSTRAP_TOKEN) : undefined;
 const apiServer = createApiServer({
   relational,
   ...(catalogRepository ? {
@@ -111,7 +109,7 @@ const apiServer = createApiServer({
     createProduct: (input) => catalogRepository!.createProduct(input),
     updateProduct: (id, patch, expectedVersion) => catalogRepository!.updateProduct(id, patch, expectedVersion),
   } : {}),
-  authSecret,
+  auth,
   catalog,
   search: new SearchService({
     catalog,

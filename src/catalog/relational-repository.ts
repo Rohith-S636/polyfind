@@ -17,6 +17,7 @@ export interface BrandInput {
   name: string;
   slug: string;
   description?: string | null;
+  actorUserId?: string;
 }
 
 export interface SellerInput {
@@ -24,6 +25,7 @@ export interface SellerInput {
   name: string;
   slug: string;
   status?: SellerStatus | undefined;
+  actorUserId?: string;
 }
 
 export interface Seller {
@@ -103,6 +105,7 @@ export interface ProductVariantInput {
   variantKey: string;
   attributes: Record<string, string>;
   sku?: string | null;
+  actorUserId?: string;
 }
 
 export interface CreateOfferInput {
@@ -382,7 +385,9 @@ export class RelationalRepository implements RelationalStore {
         "INSERT INTO brands (id, name, slug, description) VALUES (?, ?, ?, ?)",
         [id, name, slug, input.description ?? null],
       );
-      await writeOutbox(connection, "brand", id, 1, "brand.created", { id, name, slug, description: input.description ?? null });
+      const after = { id, name, slug, description: input.description ?? null };
+      await writeOutbox(connection, "brand", id, 1, "brand.created", after);
+      await writeAudit(connection, "brand.created", "brand", id, null, after, input.actorUserId, undefined);
       await connection.commit();
     } catch (error) {
       await connection.rollback();
@@ -435,7 +440,9 @@ export class RelationalRepository implements RelationalStore {
         "INSERT INTO sellers (id, name, slug, status) VALUES (?, ?, ?, ?)",
         [id, name, slug, status],
       );
-      await writeOutbox(connection, "seller", id, 1, "seller.created", { id, name, slug, status });
+      const after = { id, name, slug, status };
+      await writeOutbox(connection, "seller", id, 1, "seller.created", after);
+      await writeAudit(connection, "seller.created", "seller", id, null, after, input.actorUserId, undefined);
       await connection.commit();
       return {
         id,
@@ -522,13 +529,17 @@ export class RelationalRepository implements RelationalStore {
          VALUES (?, ?, ?, ?, ?)`,
         [id, productId, input.sku ?? null, variantKey, JSON.stringify(input.attributes)],
       );
-      await writeOutbox(connection, "variant", id, 1, "variant.created", {
+      const after = {
         sourceId: id,
         productId,
         sku: input.sku ?? null,
         sourceVersion: 1,
         status: "active",
-      });
+        variantKey,
+        attributes: input.attributes,
+      };
+      await writeOutbox(connection, "variant", id, 1, "variant.created", after);
+      await writeAudit(connection, "variant.created", "variant", id, null, after, input.actorUserId, undefined);
       await connection.commit();
     } catch (error) {
       await connection.rollback();

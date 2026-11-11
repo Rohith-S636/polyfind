@@ -16,7 +16,8 @@
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed-catalog.ts",
     "api": "tsx scripts/api.ts",
-    "benchmark:integration": "tsx scripts/run-benchmark.ts"
+    "benchmark:integration": "tsx scripts/run-benchmark.ts",
+    "prepare:ci-db": "tsx scripts/prepare-ci-databases.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

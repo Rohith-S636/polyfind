@@ -547,3 +547,32 @@ test("13. Method Not Allowed: POST /api/products returns 405", async () => {
 test("14. Opt-in MySQL RelationalRepository integration", { skip: !process.env.TEST_DATABASE_URL }, async () => {
   assert.ok(process.env.TEST_DATABASE_URL);
 });
+
+
+test("15. POST /api/sellers creates a seller only with catalogue mutation credentials", async () => {
+  const { api } = createTestServer();
+  const port = await api.start(0);
+  try {
+    const denied = await fetch(`http://127.0.0.1:${port}/api/sellers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "seller-new", name: "New Seller", slug: "new-seller" }),
+    });
+    assert.equal(denied.status, 401);
+
+    const created = await fetch(`http://127.0.0.1:${port}/api/sellers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${AUTH_SECRET}`,
+      },
+      body: JSON.stringify({ id: "seller-new", name: "New Seller", slug: "new-seller" }),
+    });
+    assert.equal(created.status, 201);
+    const json = (await created.json()) as any;
+    assert.equal(json.item.id, "seller-new");
+    assert.equal(json.item.status, "active");
+  } finally {
+    await api.stop();
+  }
+});

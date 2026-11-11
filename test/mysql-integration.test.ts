@@ -8,6 +8,8 @@ import {
   parseDatabaseUrl,
   runMigrations,
   SessionAuthService,
+  createApiServer,
+  asCatalogReader,
 } from "../src/index.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -77,13 +79,36 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
     assert.equal((await relational.getBrand(brandId))?.name, "Integration Brand");
     assert.ok((await relational.listBrands()).some((brand) => brand.id === brandId));
 
-    await relational.createSeller({
-      id: sellerId,
-      name: "Integration Seller",
-      slug: sellerId,
-      actorUserId: bootstrapped.user.id,
+    const api = createApiServer({
+      catalog: asCatalogReader(catalog),
+      relational,
+      auth,
     });
+    const apiPort = await api.start(0);
+    try {
+      const sellerResponse = await fetch(`http://127.0.0.1:${apiPort}/api/sellers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${bootstrapped.token}`,
+        },
+        body: JSON.stringify({
+          id: sellerId,
+          name: "Integration Seller",
+          slug: sellerId,
+          actorUserId: "client-actor-id",
+        }),
+      });
+      assert.equal(sellerResponse.status, 201);
+    } finally {
+      await api.stop();
+    }
     assert.equal((await relational.getSeller(sellerId))?.status, "active");
+    const [sellerAuditRows] = await pool.query(
+      "SELECT actor_user_id FROM audit_logs WHERE entity_type = 'seller' AND entity_id = ? ORDER BY id DESC LIMIT 1",
+      [sellerId],
+    );
+    assert.equal((sellerAuditRows as Array<{ actor_user_id: string }>)[0]?.actor_user_id, bootstrapped.user.id);
 
     await relational.createProductVariant({
       id: variantId,

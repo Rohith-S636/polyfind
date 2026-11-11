@@ -169,7 +169,7 @@ export class LanceDbVectorStore implements VectorStoreCandidate {
 
   async count(): Promise<number> {
     const table = this.requireTable();
-    return (await table.query().select(["id"]).toArray()).length;
+    return (await table.query().where("deleted = false").select(["id"]).toArray()).length;
   }
 
   async getVersion(id: ProductId): Promise<SourceVersion | null> {

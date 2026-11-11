@@ -451,7 +451,7 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
 
       await transaction.run(
         `MATCH (o:Offer {sourceId: $sourceId})
-         OPTIONAL MATCH (o)-[relationship:OFFER_FOR|PROVIDED_BY|OFFER_FOR_VARIANT]->()
+         OPTIONAL MATCH (o)-[relationship]->()
          DELETE relationship`,
         projection,
       );
@@ -491,7 +491,8 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
 
     await transaction.run(
       `MATCH (p:Product {sourceId: $productId})
-       OPTIONAL MATCH (p)-[old:IN_CATEGORY|HAS_BRAND]->()
+       OPTIONAL MATCH (p)-[old]->()
+       WHERE type(old) IN ['IN_CATEGORY', 'HAS_BRAND']
        DELETE old`,
       { productId: projection.sourceId },
     );

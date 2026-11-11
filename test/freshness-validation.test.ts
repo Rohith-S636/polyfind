@@ -92,6 +92,19 @@ test("unverifiable authority produces an explicit unavailable result", async () 
   assert.equal(validator.getTelemetry().freshnessViolations, 1);
 });
 
+test("batch lookup omissions fall back to the authoritative single-product read", async () => {
+  const validator = new FreshnessValidator({
+    async getProducts() { return []; },
+    async getProduct(productId: string) {
+      return productId === authoritativeProduct.id ? authoritativeProduct : null;
+    },
+  });
+  const result = await validator.validateCandidate(candidate(3));
+  assert.equal(result.status, "fresh");
+  assert.equal(result.safeToPresent, true);
+  assert.equal(result.product?.id, authoritativeProduct.id);
+});
+
 test("authority lookup failures are counted rather than silently accepted", async () => {
   const validator = new FreshnessValidator({
     async getProduct(): Promise<Product> {

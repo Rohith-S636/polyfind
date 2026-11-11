@@ -506,16 +506,6 @@ export class RelationalRepository implements RelationalStore {
     }
   }
 
-  async getBrand(id: string): Promise<BrandInput | null> {
-    const key = id.trim();
-    const brand = this.brands.get(key) ?? Array.from(this.brands.values()).find((item) => item.slug === key);
-    return brand ? { ...brand } : null;
-  }
-
-  async listBrands(): Promise<BrandInput[]> {
-    return Array.from(this.brands.values()).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)).map((brand) => ({ ...brand }));
-  }
-
   async createProductVariant(input: ProductVariantInput): Promise<void> {
     const id = validateId(input.id, "Variant ID");
     const productId = validateId(input.productId, "Product ID");
@@ -1083,6 +1073,18 @@ export class InMemoryRelationalStore implements RelationalStore {
       throw new CatalogValidationError("Brand slug already exists.");
     }
     this.brands.set(id, { ...input, id, name, slug });
+  }
+
+  async getBrand(id: string): Promise<BrandInput | null> {
+    const key = id.trim();
+    const brand = this.brands.get(key) ?? Array.from(this.brands.values()).find((item) => item.slug === key);
+    return brand ? { ...brand } : null;
+  }
+
+  async listBrands(): Promise<BrandInput[]> {
+    return Array.from(this.brands.values())
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+      .map((brand) => ({ ...brand }));
   }
 
   async createProductVariant(input: ProductVariantInput): Promise<void> {

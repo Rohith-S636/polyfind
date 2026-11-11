@@ -130,6 +130,7 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await adminPage.getByRole("searchbox", { name: "Search products by title, keyword, or description" }).fill(productName);
   await adminPage.getByRole("button", { name: "Submit search" }).click();
   await expect(adminPage.getByText(productName).first()).toBeVisible();
+  await adminPage.screenshot({ path: "test-results/polyfind-search-results.png", fullPage: true });
 
   await adminPage.goto(`${baseUrl}/products/${productId}`);
   await expect(adminPage.getByRole("heading", { name: productName })).toBeVisible();
@@ -137,5 +138,6 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await expect(adminPage.getByText(sellerName)).toBeVisible();
   await expect(adminPage.getByText("INR 1699.00").first()).toBeVisible();
   await expect(adminPage.getByRole("heading", { name: "Offer price history" })).toBeVisible();
+  await adminPage.screenshot({ path: "test-results/polyfind-product-comparison.png", fullPage: true });
   await adminPage.close();
 });

@@ -729,21 +729,28 @@ test("19. Session authentication exposes login, current principal, logout, and r
     assert.equal(login.status, 200);
     const session = (await login.json()) as any;
     assert.equal(session.user.roles[0], "admin");
+    assert.equal("token" in session, false);
+    const cookieHeader = login.headers.get("set-cookie");
+    assert.ok(cookieHeader);
+    assert.match(cookieHeader, /HttpOnly/i);
+    assert.match(cookieHeader, /SameSite=Strict/i);
+    const cookie = cookieHeader.split(";")[0]!;
 
     const me = await fetch(`http://127.0.0.1:${port}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${session.token}` },
+      headers: { Cookie: cookie },
     });
     assert.equal(me.status, 200);
     assert.equal(((await me.json()) as any).user.id, "admin-test");
 
     const logout = await fetch(`http://127.0.0.1:${port}/api/auth/logout`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${session.token}` },
+      headers: { Cookie: cookie },
     });
     assert.equal(logout.status, 200);
+    assert.match(logout.headers.get("set-cookie") ?? "", /Max-Age=0/);
 
     const revoked = await fetch(`http://127.0.0.1:${port}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${session.token}` },
+      headers: { Cookie: cookie },
     });
     assert.equal(revoked.status, 401);
   } finally {

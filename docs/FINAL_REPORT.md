@@ -67,7 +67,7 @@ Use the latest GitHub Actions workflow as the source of truth. The CI workflow i
 
 ## 6. Benchmark methodology and reporting
 
-The committed baseline fixture contains fixture-labelled environment data and provisional relevance judgments. It is a regression fixture, not evidence of a measured production deployment. Older draft sections in this report that quoted fixed p95, NDCG, freshness, hardware, or scale figures without raw measured artifacts are superseded by this statement.
+The committed baseline fixture contains fixture-labelled environment data and provisional relevance judgments. It is a regression fixture, not evidence of a measured production deployment. **Fixture values are not empirical measurements.** Older draft sections in this report that quoted fixed p95, NDCG, freshness, hardware, or scale figures without raw measured artifacts are superseded by this statement.
 
 A defensible experiment must:
 1. record exact commit, Node/npm versions, CPU/RAM/OS, database versions, and service topology;
@@ -88,7 +88,7 @@ No performance superiority claim is made in this draft until those artifacts are
 - Default fusion weights are explicit but not learned or experimentally optimized.
 - Process-local auth throttling is not sufficient for horizontally scaled public deployment.
 - Session-scoped browser storage is not the final production browser-session design.
-- A successful repository CI run does not prove that a Render deployment is running the same commit or has persistent, healthy external services.
+- A successful repository CI run does not prove that a Render deployment is running the same commit or has persistent, healthy external services. **Public hosting is not certified** until the deployed commit and all dependencies are independently smoke-tested.
 
 ## 8. Reproducibility
 

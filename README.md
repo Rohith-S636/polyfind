@@ -140,7 +140,7 @@ The repository has previously been connected to a Render service, but a current 
 
 `npx tsx scripts/export-baseline-visualization.ts` exports the committed baseline fixture for chart/report formatting. This is a **fixture visualization**, not a new measured experiment. Do not cite its values as empirical performance results. The final report documents the required protocol for collecting raw measured runs.
 
-## Team workflow and slice traceability
+## Active sprint and slice status
 
 - **Active Sprint:** [Sprint 1 — Research and foundation](docs/sprints/sprint-01.md)
 - **Active slices:**
@@ -156,6 +156,6 @@ The repository has previously been connected to a Render service, but a current 
 - Feature branches: `feature/<slice-id>-<short-description>`.
 - Fix branches: `fix/<slice-id>-<short-description>`.
 - Commit and PR titles identify the slice using `[<slice-id>]`.
-- PRs must list acceptance criteria checked, commands/tests run, evidence, and limitations.
+- PR Title: `[<slice-id>] <summary>`. PRs must list Acceptance criteria checked, commands/tests run, evidence, and limitations. Issue-to-slice traceability is required for every task and pull request.
 - Every task links to one slice and has one directly responsible owner.
 - Never commit `.env`, credentials, generated datasets, or benchmark output directories.

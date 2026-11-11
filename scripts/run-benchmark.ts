@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -24,6 +23,7 @@ import {
   loadEnvironment,
 } from "../src/index.js";
 import type { SearchRequest } from "../src/contracts/types.js";
+import type { RowDataPacket } from "mysql2/promise";
 import type { Neo4jGraphAdapter } from "../src/sync/neo4j-driver.js";
 import { PermanentOutboxError } from "../src/sync/outbox.js";
 
@@ -71,7 +71,7 @@ async function drainOutbox(store: MySqlOutboxStore, targetWorker: OutboxWorker):
 
 try {
   await pool.query("SELECT 1");
-  const [versionRows] = await pool.query<Array<{ version: string }>>("SELECT VERSION() AS version");
+  const [versionRows] = await pool.query<RowDataPacket[]>("SELECT VERSION() AS version");
   await redis.connect();
   const neo = await initializeNeo4j();
   graph = neo.graph;
@@ -173,7 +173,7 @@ try {
     metadata: {
       commitSha: process.env.GITHUB_SHA ?? "local-unpinned",
       databaseName: parsedDatabaseUrl.pathname.slice(1),
-      mysqlVersion: versionRows[0]?.version ?? "unknown",
+      mysqlVersion: String(versionRows[0]?.["version"] ?? "unknown"),
       datasetSeed: seed,
       productsIndexedToLanceDb: indexed,
       localVectorizer: embedder.modelName,

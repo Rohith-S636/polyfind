@@ -1,5 +1,7 @@
 # PolyFind End-to-End Project Audit
 
+> **Historical baseline:** This audit describes the repository state before the 2026-11-11 remediation. For current Phase 10/11 implementation, test evidence, and security gates, see [PHASE10_PHASE11_ACCEPTANCE_AUDIT.md](./PHASE10_PHASE11_ACCEPTANCE_AUDIT.md). Earlier findings below are retained as historical context and are not the current status.
+
 **Audit date:** 2026-11-04  
 **Scope:** Repository files, runtime paths, database/migration surfaces, UI, benchmarks, tests, documentation, and deployment configuration.  
 **Method:** Static inspection of the complete tracked-file inventory, targeted source tracing, repository status review, and execution of the project validation commands.

@@ -168,6 +168,11 @@ let shuttingDown = false;
 const shutdown = async () => {
   if (shuttingDown) return;
   shuttingDown = true;
+  try {
+    await app.stop();
+  } catch (error) {
+    console.error("API server shutdown reported an error; continuing dependency cleanup.", error);
+  }
   await outboxWorker?.stop();
   await Promise.all(outboxTargets.map((target) => target.close?.()));
   await redis?.close();

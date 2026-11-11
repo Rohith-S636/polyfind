@@ -64,6 +64,22 @@ This is an implementation and evaluation project, not a commercial marketplace a
 - Training a new foundation model or claiming the local feature-hashing vectorizer is transformer-level semantic understanding.
 - Mobile applications, product reviews, or social features.
 
+## Success criteria
+
+- A new developer can start the local app using the README and `.env.example`, with no undocumented secret.
+- MySQL schema, constraints, and transactional update tests pass.
+- Search supports structured filtering and at least one semantic retrieval path.
+- Derived-store version/freshness behavior is observable and covered by automated tests.
+- Tests demonstrate that stale cache/index data cannot silently replace authoritative price/stock values.
+- The benchmark harness can replay a fixed query/update workload and emit results with configuration metadata.
+- Baselines and the proposed policy are compared under the same dataset and workload.
+- Report includes search-quality metrics, freshness violations, latency percentiles, resource/work counts, ablations, limitations, and repeatability details.
+- No novelty or performance claim is made without direct evidence.
+
+## Open questions
+
+There are no unresolved product-scope questions. Implementation status and remaining acceptance gates are tracked in `13_PHASE_MASTER_ACCEPTANCE.md`.
+
 ## 7. Acceptance and change control
 
 The 13-phase master acceptance record is authoritative for implementation status. A phase is complete only when its code/configuration, tests, documentation, and relevant end-to-end evidence pass. A source file, planned test, skipped integration, fixture benchmark, or green typecheck alone does not satisfy acceptance.

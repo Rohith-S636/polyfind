@@ -552,6 +552,39 @@ async function handle(
       return;
     }
 
+    if (url.pathname === "/api/brands") {
+      const items = await relational.listBrands();
+      sendJson(response, 200, { items, total: items.length });
+      return;
+    }
+
+    const brandMatch = /^\/api\/brands\/([^/]+)$/.exec(url.pathname);
+    if (brandMatch) {
+      const brandId = decodeURIComponent(brandMatch[1]!);
+      const item = await relational.getBrand(brandId);
+      if (!item) throw new NotFoundError("Brand", brandId);
+      sendJson(response, 200, { item });
+      return;
+    }
+
+    const variantsMatch = /^\/api\/products\/([^/]+)\/variants$/.exec(url.pathname);
+    if (variantsMatch) {
+      const productId = decodeURIComponent(variantsMatch[1]!);
+      if (!(await options.catalog.getProduct(productId))) throw new NotFoundError("Product", productId);
+      const items = await relational.listProductVariants(productId);
+      sendJson(response, 200, { items, total: items.length });
+      return;
+    }
+
+    const variantMatch = /^\/api\/variants\/([^/]+)$/.exec(url.pathname);
+    if (variantMatch) {
+      const variantId = decodeURIComponent(variantMatch[1]!);
+      const item = await relational.getProductVariant(variantId);
+      if (!item) throw new NotFoundError("Variant", variantId);
+      sendJson(response, 200, { item });
+      return;
+    }
+
     if (url.pathname === "/api/sellers") {
       const { page, limit } = parseCommonPagination(url);
       const status = url.searchParams.get("status") as SellerStatus | undefined;

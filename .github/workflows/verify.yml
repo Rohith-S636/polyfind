@@ -69,6 +69,7 @@ jobs:
       POLYFIND_NEO4J_TEST_USERNAME: neo4j
       POLYFIND_NEO4J_TEST_PASSWORD: polyfind_test_password
       POLYFIND_LANCEDB_TEST_PATH: /tmp/polyfind-lancedb-test
+      TEST_LANCEDB_PATH: /tmp/polyfind-lancedb-hybrid-test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

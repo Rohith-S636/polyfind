@@ -81,6 +81,7 @@ export interface ListPriceHistoryOptions {
 }
 
 export interface RelationalStore {
+  createSeller(input: SellerInput): Promise<Seller>;
   getSeller(id: string): Promise<Seller | null>;
   listSellers(options?: ListSellersOptions): Promise<{ items: Seller[]; page: number; limit: number; total: number }>;
   getOffer(id: string): Promise<Offer | null>;

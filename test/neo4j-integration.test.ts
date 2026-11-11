@@ -166,7 +166,8 @@ test("real Neo4j projection reconciles relationships and cleans owned nodes", { 
 
       const remaining = await session.run(
         `RETURN
-           exists { MATCH (:Product {sourceId: $productId}) } AS productExists,
+           exists { MATCH (p:Product {sourceId: $productId}) WHERE p.status <> 'deleted' } AS productExists,
+           exists { MATCH (p:Product {sourceId: $productId}) WHERE p.status = 'deleted' AND p.name IS NULL } AS productTombstoneExists,
            exists { MATCH (:ProductVariant {sourceId: $variantId}) } AS variantExists,
            exists { MATCH (:ProductVariant {sourceId: $ownedVariantId}) } AS ownedVariantExists,
            exists { MATCH (:Offer {sourceId: $offerId}) } AS offerExists,
@@ -178,6 +179,7 @@ test("real Neo4j projection reconciles relationships and cleans owned nodes", { 
       );
       const record = remaining.records[0];
       assert.equal(record?.get("productExists"), false);
+      assert.equal(record?.get("productTombstoneExists"), true);
       assert.equal(record?.get("variantExists"), true);
       assert.equal(record?.get("ownedVariantExists"), false);
       assert.equal(record?.get("offerExists"), true);

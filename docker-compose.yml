@@ -87,7 +87,7 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       API_PORT: 3001
       PORT: 3000
-      AUTH_SECRET: ${AUTH_SECRET:-replace-in-production}
+      AUTH_BOOTSTRAP_TOKEN: ${AUTH_BOOTSTRAP_TOKEN:-}
     ports:
       - "3000:3000"
     depends_on:

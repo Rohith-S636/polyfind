@@ -5,10 +5,21 @@ import {
   scrypt as scryptCallback,
   timingSafeEqual,
 } from "node:crypto";
-import { promisify } from "node:util";
 import type { Pool, RowDataPacket } from "mysql2/promise";
 
-const scrypt = promisify(scryptCallback);
+function deriveKey(
+  password: string,
+  salt: Buffer,
+  keyLength: number,
+  options: { N: number; r: number; p: number; maxmem: number },
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scryptCallback(password, salt, keyLength, options, (error, derived) => {
+      if (error) reject(error);
+      else resolve(derived as Buffer);
+    });
+  });
+}
 const SCRYPT_N = 16_384;
 const SCRYPT_R = 8;
 const SCRYPT_P = 1;
@@ -51,7 +62,7 @@ function constantTimeEqual(left: string, right: string): boolean {
 
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16);
-  const derived = await scrypt(password, salt, KEY_LENGTH, {
+  const derived = await deriveKey(password, salt, KEY_LENGTH, {
     N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P, maxmem: 64 * 1024 * 1024,
   }) as Buffer;
   return ["scrypt", SCRYPT_N, SCRYPT_R, SCRYPT_P, salt.toString("hex"), derived.toString("hex")].join("$");
@@ -68,7 +79,7 @@ async function verifyPassword(password: string, encoded: string): Promise<boolea
   if (![n, r, p].every(Number.isSafeInteger) || !/^[a-f0-9]{32}$/i.test(saltHex) ||
       !/^[a-f0-9]{128}$/i.test(hashHex)) return false;
   const expected = Buffer.from(hashHex, "hex");
-  const actual = await scrypt(password, Buffer.from(saltHex, "hex"), expected.length, {
+  const actual = await deriveKey(password, Buffer.from(saltHex, "hex"), expected.length, {
     N: n, r, p, maxmem: 64 * 1024 * 1024,
   }) as Buffer;
   return actual.length === expected.length && timingSafeEqual(actual, expected);

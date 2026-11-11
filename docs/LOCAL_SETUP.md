@@ -37,11 +37,13 @@ cp .env.example .env
 | `VECTOR_STORE_URL` | URL or directory path for vector store persistence | `./data/vectors` | Semantic retrieval |
 | `EMBEDDING_PROVIDER` | Embedding provider (`mock`, `transformers`, `openai`) | `mock` | Semantic ingestion |
 | `EMBEDDING_MODEL` | Embedding model identifier | `all-MiniLM-L6-v2` | Semantic ingestion |
-| `AUTH_SECRET` | Secret token used for internal API verification | (random string) | Production/Auth |
+| `AUTH_BOOTSTRAP_TOKEN` | One-time token for creating the first administrator; use 32+ random characters and remove it after bootstrap | (unset by default) | Initial admin setup only |
 
 > [!CAUTION]
 > Never commit `.env` or any file containing real passwords or API keys to version control. The `.gitignore` enforces this rule.
 
+
+> **Authentication:** Live API writes require an administrator session. On a fresh database, set AUTH_BOOTSTRAP_TOKEN to a unique random value of at least 32 characters, then call POST /api/auth/bootstrap with the token, an administrator email, and a password of at least 12 characters. The endpoint is permanently closed once the first user exists. Remove the bootstrap token from the deployment environment after successful setup. Use POST /api/auth/login to obtain a short-lived bearer session and POST /api/auth/logout to revoke it.
 ---
 
 ## 3. Local Database Setup Instructions

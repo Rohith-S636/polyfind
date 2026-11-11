@@ -19,14 +19,23 @@ test("research claims document has a traceable matrix and evidence boundaries", 
     "Azure Cache-Aside pattern",
     "## What is established knowledge",
     "## What PolyFind proposes",
-    "## Findings supported by the committed fixture",
+    "    "## Measured CI benchmark (2026-11-11)",",
+    "    "42959976828",",
+    "    "50 products indexed in LanceDB",",
+    "    "0.867",",
+    "    "0.887",",
+    "    "43.18%",",
+    "    "114 / 264",",
+    "    "Historical regression fixture",",
+    "    "not independently reviewed research qrels",",
+
     "## Claims explicitly not supported",
     "## Threats to validity and limitations",
-    "0.0%",
-    "18.5%",
-    "2.90 ms",
-    "1.30",
-    "52.3%",
+
+
+
+
+
   ]) {
     assert.ok(document.includes(required), `missing required research evidence: ${required}`);
   }

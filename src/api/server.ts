@@ -310,7 +310,7 @@ async function handle(
         if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 1)) {
           throw new CatalogValidationError("expectedVersion must be a positive integer.");
         }
-        const patch: UpdateProductInput = {};
+        const patch: UpdateProductInput = { actorUserId: actor.id };
         if (body["name"] !== undefined) patch.name = String(body["name"]);
         if (body["description"] !== undefined) patch.description = String(body["description"]);
         if (body["categoryId"] !== undefined) patch.categoryId = String(body["categoryId"]);
@@ -404,6 +404,7 @@ async function handle(
         const input: BrandInput = {
           id: body["id"], name: body["name"], slug: body["slug"],
           ...(typeof body["description"] === "string" ? { description: body["description"] } : {}),
+          actorUserId: actor.id,
         };
         await relational.createBrand(input);
         sendJson(response, 201, { item: input });
@@ -432,6 +433,7 @@ async function handle(
           id: body["id"], productId, variantKey: body["variantKey"],
           attributes: body["attributes"] as Record<string, string>,
           ...(typeof body["sku"] === "string" || body["sku"] === null ? { sku: body["sku"] as string | null } : {}),
+          actorUserId: actor.id,
         };
         await relational.createProductVariant(input);
         sendJson(response, 201, { item: input });
@@ -459,6 +461,7 @@ async function handle(
         const input: SellerInput = {
           id: body["id"], name: body["name"], slug: body["slug"],
           ...(status ? { status } : {}),
+          actorUserId: actor.id,
         };
         const created = await relational.createSeller(input);
         sendJson(response, 201, { item: created });
@@ -517,6 +520,7 @@ async function handle(
         const input: CreateProductInput = {
           id: body["id"], name: body["name"], description: body["description"],
           categoryId: body["categoryId"], price: body["price"], stock: body["stock"],
+          actorUserId: actor.id,
         };
         const created = await options.createProduct(input);
         sendJson(response, 201, { item: created });

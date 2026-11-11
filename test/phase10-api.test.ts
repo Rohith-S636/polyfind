@@ -34,9 +34,13 @@ function createTestAuth() {
   let revoked = false;
   return {
     async authenticate(token: string) {
-      return token === AUTH_SECRET && !revoked
-        ? { id: "admin-test", email: "admin@example.test", roles: ["admin"] }
-        : null;
+      if (token === AUTH_SECRET && !revoked) {
+        return { id: "admin-test", email: "admin@example.test", roles: ["admin"] };
+      }
+      if (token === "customer-token") {
+        return { id: "customer-test", email: "customer@example.test", roles: ["customer"] };
+      }
+      return null;
     },
     async login(email: string) {
       return { token: AUTH_SECRET, expiresAt: "2026-12-01T00:00:00.000Z", user: { id: "admin-test", email, roles: ["admin"] } };
@@ -710,6 +714,13 @@ test("19. Session authentication exposes login, current principal, logout, and r
   });
   const port = await api.start(0);
   try {
+    const customerMutation = await fetch(`http://127.0.0.1:${port}/api/sellers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer customer-token" },
+      body: JSON.stringify({ id: "seller-forbidden", name: "Forbidden", slug: "forbidden" }),
+    });
+    assert.equal(customerMutation.status, 401);
+
     const login = await fetch(`http://127.0.0.1:${port}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

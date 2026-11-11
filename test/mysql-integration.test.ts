@@ -36,6 +36,13 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
 
     const catalog = new CatalogRepository(pool);
     const relational = new RelationalRepository(pool);
+    const bootstrapToken = "disposable-ci-bootstrap-token-with-32-plus-characters";
+    const auth = new SessionAuthService(pool, bootstrapToken);
+    const bootstrapped = await auth.bootstrapAdmin(
+      `admin-${suffix}@example.test`,
+      "correct-horse-battery-staple-2026",
+      bootstrapToken,
+    );
 
     const createdProduct = await catalog.createProduct({
       id: productId,
@@ -44,18 +51,19 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
       categoryId,
       price: 120,
       stock: 9,
+      actorUserId: bootstrapped.user.id,
     });
     assert.equal(createdProduct.version, 1);
 
     const updatedProduct = await catalog.updateProduct(
       productId,
-      { price: 110, stock: 8 },
+      { price: 110, stock: 8, actorUserId: bootstrapped.user.id },
       1,
     );
     assert.equal(updatedProduct.version, 2);
     assert.equal(updatedProduct.price, 110);
     await assert.rejects(
-      catalog.updateProduct(productId, { price: 100 }, 1),
+      catalog.updateProduct(productId, { price: 100, actorUserId: bootstrapped.user.id }, 1),
       /version|conflict/i,
     );
 
@@ -64,6 +72,7 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
       name: "Integration Brand",
       slug: brandId,
       description: "CI only",
+      actorUserId: bootstrapped.user.id,
     });
     assert.equal((await relational.getBrand(brandId))?.name, "Integration Brand");
     assert.ok((await relational.listBrands()).some((brand) => brand.id === brandId));
@@ -72,6 +81,7 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
       id: sellerId,
       name: "Integration Seller",
       slug: sellerId,
+      actorUserId: bootstrapped.user.id,
     });
     assert.equal((await relational.getSeller(sellerId))?.status, "active");
 
@@ -81,6 +91,7 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
       variantKey: "color",
       sku: `SKU-${suffix}`,
       attributes: { color: "blue" },
+      actorUserId: bootstrapped.user.id,
     });
     assert.equal((await relational.getProductVariant(variantId))?.attributes.color, "blue");
     assert.equal((await relational.listProductVariants(productId)).length, 1);
@@ -95,12 +106,13 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
       stockQuantity: 4,
       availability: "available",
       changeReason: "integration_create",
+      actorUserId: bootstrapped.user.id,
     });
     assert.equal(createdOffer.version, 1);
 
     const updatedOffer = await relational.updateOffer(
       offerId,
-      { price: 449, changeReason: "integration_update" },
+      { price: 449, changeReason: "integration_update", actorUserId: bootstrapped.user.id },
       1,
     );
     assert.equal(updatedOffer.version, 2);
@@ -120,6 +132,12 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
     );
     assert.ok(Number((outboxRows as Array<{ total: number }>)[0]?.total ?? 0) >= 4);
 
+    const [auditRows] = await pool.query(
+      "SELECT COUNT(*) AS total FROM audit_logs WHERE actor_user_id = ? AND entity_id IN (?, ?, ?, ?, ?)",
+      [bootstrapped.user.id, productId, brandId, sellerId, variantId, offerId],
+    );
+    assert.ok(Number((auditRows as Array<{ total: number }>)[0]?.total ?? 0) >= 6);
+
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
@@ -137,12 +155,6 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
     );
     assert.equal(Number((rollbackRows as Array<{ total: number }>)[0]?.total ?? 0), 0);
 
-    const auth = new SessionAuthService(pool, "disposable-ci-bootstrap-token-with-32-plus-characters");
-    const bootstrapped = await auth.bootstrapAdmin(
-      `admin-${suffix}@example.test`,
-      "correct-horse-battery-staple-2026",
-      "disposable-ci-bootstrap-token-with-32-plus-characters",
-    );
     assert.ok(bootstrapped.token.length >= 40);
     const authenticated = await auth.authenticate(bootstrapped.token);
     assert.equal(authenticated?.id, bootstrapped.user.id);

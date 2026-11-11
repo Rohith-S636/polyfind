@@ -80,6 +80,7 @@ function recordUnverifiable(telemetry: FreshnessTelemetry): void {
  */
 export class FreshnessValidator {
   private readonly authority: FreshnessAuthority;
+  private telemetry: FreshnessTelemetry = emptyTelemetry();
 
   constructor(authority: FreshnessAuthority | CatalogReader) {
     this.authority = authority;
@@ -118,6 +119,7 @@ export class FreshnessValidator {
 
     for (const candidate of candidates) {
       telemetry.checkedCandidates += 1;
+      this.telemetry.checkedCandidates += 1;
       let product: Product | null = productMap.get(candidate.productId) ?? null;
       if (!product && !this.authority.getProducts) {
         try {
@@ -137,6 +139,7 @@ export class FreshnessValidator {
           violation.sourceVersion = candidate.sourceVersion;
         }
         recordUnverifiable(telemetry);
+        recordUnverifiable(this.telemetry);
         results.push({
           candidate,
           status: "unverifiable",
@@ -177,6 +180,7 @@ export class FreshnessValidator {
           reason: "stale-version",
         };
         recordStale(telemetry);
+        recordStale(this.telemetry);
         results.push({
           candidate,
           status: "stale",
@@ -209,6 +213,7 @@ export class FreshnessValidator {
       }
 
       telemetry.freshCandidates += 1;
+      this.telemetry.freshCandidates += 1;
       results.push({
         candidate,
         status: "fresh",
@@ -226,12 +231,11 @@ export class FreshnessValidator {
 
   /** @deprecated Use the request-scoped telemetry returned by validateCandidates. */
   getTelemetry(): FreshnessTelemetry {
-    return emptyTelemetry();
+    return { ...this.telemetry };
   }
 
-  /** @deprecated Telemetry is request-scoped and no longer needs resetting. */
   resetTelemetry(): void {
-    // Intentionally empty: validation calls do not share mutable telemetry.
+    this.telemetry = emptyTelemetry();
   }
 }
 

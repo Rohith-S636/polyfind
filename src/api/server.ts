@@ -27,11 +27,19 @@ import {
   type ProductVariantInput,
 } from "../catalog/index.js";
 import { SearchService } from "./search.js";
+import { AuthenticationError, type AuthPrincipal, type AuthSession } from "../auth/session-auth.js";
 import type { RedisConnectionStatus } from "../cache/redis-adapter.js";
 import type { Neo4jStatus } from "../sync/neo4j-driver.js";
 import type { VectorRuntimeHealth } from "../retrieval/vector-lifecycle.js";
 
 const MAX_LIMIT = 100;
+
+export interface ApiAuthService {
+  authenticate(token: string): Promise<AuthPrincipal | null>;
+  login?(email: string, password: string): Promise<AuthSession>;
+  bootstrapAdmin?(email: string, password: string, suppliedToken: string): Promise<AuthSession>;
+  logout?(token: string): Promise<void>;
+}
 
 export interface ApiServerOptions {
   catalog: CatalogReader;
@@ -40,7 +48,7 @@ export interface ApiServerOptions {
   createProduct?: ((input: CreateProductInput) => Promise<Product>) | undefined;
   updateProduct?: ((id: string, patch: UpdateProductInput, expectedVersion?: number) => Promise<Product>) | undefined;
   search?: SearchService | undefined;
-  authSecret?: string | undefined;
+  auth?: ApiAuthService | undefined;
   dependencyStatus?: Record<string, "available" | "not-configured" | "unavailable"> | undefined;
   redisStatus?: (() => RedisConnectionStatus) | undefined;
   graphStatus?: (() => Neo4jStatus) | undefined;
@@ -64,7 +72,7 @@ function sendJson(response: ServerResponse, status: number, body: unknown): void
   response.setHeader("Content-Length", Buffer.byteLength(payload));
   response.setHeader("Access-Control-Allow-Origin", response.getHeader("Access-Control-Allow-Origin") ?? "*");
   response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
   response.end(payload);
 }
 
@@ -77,6 +85,9 @@ function setSecurityHeaders(response: ServerResponse, origin: string): void {
 }
 
 function errorResponse(error: unknown): { status: number; body: object } {
+  if (error instanceof AuthenticationError) {
+    return { status: error.statusCode, body: { error: { code: error.code, message: error.message } } };
+  }
   if (error instanceof ContractValidationError) {
     return { status: 400, body: { error: { code: error.code, message: error.message, issues: error.issues } } };
   }
@@ -95,21 +106,18 @@ function errorResponse(error: unknown): { status: number; body: object } {
   return { status: 500, body: { error: { code: "INTERNAL_ERROR", message: "The request could not be completed." } } };
 }
 
-function checkMutationAuth(request: IncomingMessage, authSecret?: string): boolean {
-  const secret = authSecret ?? process.env.AUTH_SECRET;
-  if (!secret || secret.trim().length === 0) {
-    return false;
-  }
-  const authHeader = request.headers["authorization"];
-  if (typeof authHeader === "string" && authHeader.toLowerCase().startsWith("bearer ")) {
-    const token = authHeader.slice(7).trim();
-    return token === secret.trim();
-  }
-  const apiKey = request.headers["x-api-key"];
-  if (typeof apiKey === "string") {
-    return apiKey.trim() === secret.trim();
-  }
-  return false;
+function getBearerToken(request: IncomingMessage): string | null {
+  const header = request.headers["authorization"];
+  if (typeof header !== "string" || !header.toLowerCase().startsWith("bearer ")) return null;
+  const token = header.slice(7).trim();
+  return token.length > 0 ? token : null;
+}
+
+async function checkMutationAuth(request: IncomingMessage, auth?: ApiAuthService): Promise<AuthPrincipal | null> {
+  const token = getBearerToken(request);
+  if (!auth || !token) return null;
+  const principal = await auth.authenticate(token);
+  return principal?.roles.includes("admin") ? principal : null;
 }
 
 function parseCommonPagination(url: URL): { page: number; limit: number } {
@@ -270,7 +278,7 @@ async function handle(
   if (request.method === "OPTIONS") {
     response.statusCode = 204;
     response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS");
-    response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization, X-API-Key");
+    response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
     response.end();
     return;
   }
@@ -288,7 +296,8 @@ async function handle(
     if (request.method === "PUT" || request.method === "PATCH") {
       const productMatch = /^\/api\/products\/([^/]+)$/.exec(url.pathname);
       if (productMatch && options.updateProduct) {
-        if (!checkMutationAuth(request, options.authSecret)) {
+        const actor = await checkMutationAuth(request, options.auth);
+        if (!actor) {
           sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
           return;
         }
@@ -314,7 +323,8 @@ async function handle(
 
       const offerMatch = /^\/api\/offers\/([^/]+)$/.exec(url.pathname);
       if (offerMatch) {
-        if (!checkMutationAuth(request, options.authSecret)) {
+        const actor = await checkMutationAuth(request, options.auth);
+        if (!actor) {
           sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
           return;
         }
@@ -329,7 +339,7 @@ async function handle(
         if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
           throw new CatalogValidationError("expectedVersion (or version) is required and must be a positive integer.");
         }
-        const patch: UpdateOfferInput = {};
+        const patch: UpdateOfferInput = { actorUserId: actor.id };
         if (body["currency"] !== undefined) patch.currency = String(body["currency"]);
         if (body["price"] !== undefined) patch.price = Number(body["price"]);
         if (body["stockQuantity"] !== undefined) patch.stockQuantity = body["stockQuantity"] === null ? null : Number(body["stockQuantity"]);
@@ -378,7 +388,8 @@ async function handle(
       }
 
       if (url.pathname === "/api/brands") {
-        if (!checkMutationAuth(request, options.authSecret)) {
+        const actor = await checkMutationAuth(request, options.auth);
+        if (!actor) {
           sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
           return;
         }
@@ -401,7 +412,8 @@ async function handle(
 
       const variantCreateMatch = /^\/api\/products\/([^/]+)\/variants$/.exec(url.pathname);
       if (variantCreateMatch) {
-        if (!checkMutationAuth(request, options.authSecret)) {
+        const actor = await checkMutationAuth(request, options.auth);
+        if (!actor) {
           sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
           return;
         }
@@ -427,7 +439,8 @@ async function handle(
       }
 
       if (url.pathname === "/api/sellers") {
-        if (!checkMutationAuth(request, options.authSecret)) {
+        const actor = await checkMutationAuth(request, options.auth);
+        if (!actor) {
           sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
           return;
         }
@@ -452,8 +465,42 @@ async function handle(
         return;
       }
 
+      if (url.pathname === "/api/auth/bootstrap") {
+        if (!options.auth?.bootstrapAdmin) throw new AuthenticationError("Authentication service is unavailable.", "AUTH_UNAVAILABLE", 503);
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) throw new CatalogValidationError("Request body must be a JSON object.");
+        const body = rawBody as Record<string, unknown>;
+        if (typeof body["email"] !== "string" || typeof body["password"] !== "string" || typeof body["bootstrapToken"] !== "string") {
+          throw new CatalogValidationError("email, password, and bootstrapToken are required.");
+        }
+        const session = await options.auth.bootstrapAdmin(body["email"], body["password"], body["bootstrapToken"]);
+        sendJson(response, 201, session);
+        return;
+      }
+
+      if (url.pathname === "/api/auth/login") {
+        if (!options.auth?.login) throw new AuthenticationError("Authentication service is unavailable.", "AUTH_UNAVAILABLE", 503);
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) throw new CatalogValidationError("Request body must be a JSON object.");
+        const body = rawBody as Record<string, unknown>;
+        if (typeof body["email"] !== "string" || typeof body["password"] !== "string") {
+          throw new CatalogValidationError("email and password are required.");
+        }
+        sendJson(response, 200, await options.auth.login(body["email"], body["password"]));
+        return;
+      }
+
+      if (url.pathname === "/api/auth/logout") {
+        const token = getBearerToken(request);
+        if (!token || !options.auth?.logout) throw new AuthenticationError("Authentication required.");
+        await options.auth.logout(token);
+        sendJson(response, 200, { success: true });
+        return;
+      }
+
       if (url.pathname === "/api/products" && options.createProduct) {
-        if (!checkMutationAuth(request, options.authSecret)) {
+        const actor = await checkMutationAuth(request, options.auth);
+        if (!actor) {
           sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
           return;
         }
@@ -477,7 +524,8 @@ async function handle(
       }
 
       if (url.pathname === "/api/offers") {
-        if (!checkMutationAuth(request, options.authSecret)) {
+        const actor = await checkMutationAuth(request, options.auth);
+        if (!actor) {
           sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
           return;
         }
@@ -506,6 +554,7 @@ async function handle(
           validUntil: typeof body["validUntil"] === "string" ? body["validUntil"] : null,
           changeReason: typeof body["changeReason"] === "string" ? body["changeReason"] : undefined,
           requestId: typeof body["requestId"] === "string" ? body["requestId"] : undefined,
+          actorUserId: actor.id,
         };
 
         const created = await relational.createOffer(input);
@@ -518,6 +567,14 @@ async function handle(
     }
 
     // GET endpoints
+    if (url.pathname === "/api/auth/me") {
+      const token = getBearerToken(request);
+      const principal = token && options.auth ? await options.auth.authenticate(token) : null;
+      if (!principal) throw new AuthenticationError("Authentication required.");
+      sendJson(response, 200, { user: principal });
+      return;
+    }
+
     if (url.pathname === "/api/health") {
       const syncHealth = options.syncHealth ? await options.syncHealth() : undefined;
       sendJson(response, 200, {

@@ -140,7 +140,16 @@ jobs:
         env:
           POLYFIND_E2E_BASE_URL: http://localhost:3000
           POLYFIND_E2E_BOOTSTRAP_TOKEN: ci-polyfind-bootstrap-token-with-more-than-32-characters
-        run: npx playwright test e2e/polyfind.spec.mjs --workers=1 --reporter=line --timeout=60000 --global-timeout=240000
+        run: npx playwright test e2e/polyfind.spec.mjs --workers=1 --reporter=line,html --timeout=60000 --global-timeout=240000
+      - name: Upload browser screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polyfind-browser-evidence
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
       - name: Collect Compose logs on failure
         if: failure()
         run: docker compose logs --no-color

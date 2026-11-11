@@ -63,6 +63,13 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
     );
     assert.match((passwordRows as Array<{ password_hash: string }>)[0]!.password_hash, /^scrypt\$/);
 
+    const customerSession = await auth.registerCustomer(
+      `customer-${suffix}@example.test`,
+      "customer-secure-password-2026",
+    );
+    assert.deepEqual(customerSession.user.roles, ["customer"]);
+    assert.equal((await auth.authenticate(customerSession.token))?.id, customerSession.user.id);
+
     const createdProduct = await catalog.createProduct({
       id: productId,
       name: "Integration Test Product",
@@ -103,6 +110,16 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
     });
     const apiPort = await api.start(0);
     try {
+      const customerMutation = await fetch(`http://127.0.0.1:${apiPort}/api/sellers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${customerSession.token}`,
+        },
+        body: JSON.stringify({ id: `forbidden-${sellerId}`, name: "Forbidden", slug: `forbidden-${sellerId}` }),
+      });
+      assert.equal(customerMutation.status, 401);
+
       const sellerResponse = await fetch(`http://127.0.0.1:${apiPort}/api/sellers`, {
         method: "POST",
         headers: {

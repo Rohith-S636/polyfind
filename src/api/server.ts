@@ -37,6 +37,7 @@ const MAX_LIMIT = 100;
 export interface ApiAuthService {
   authenticate(token: string): Promise<AuthPrincipal | null>;
   login?(email: string, password: string): Promise<AuthSession>;
+  registerCustomer?(email: string, password: string): Promise<AuthSession>;
   bootstrapAdmin?(email: string, password: string, suppliedToken: string): Promise<AuthSession>;
   logout?(token: string): Promise<void>;
 }
@@ -478,6 +479,22 @@ async function handle(
         }
         const session = await options.auth.bootstrapAdmin(body["email"], body["password"], body["bootstrapToken"]);
         sendJson(response, 201, session);
+        return;
+      }
+
+      if (url.pathname === "/api/auth/register") {
+        if (!options.auth?.registerCustomer) {
+          throw new AuthenticationError("Registration service is unavailable.", "AUTH_UNAVAILABLE", 503);
+        }
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) {
+          throw new CatalogValidationError("Request body must be a JSON object.");
+        }
+        const body = rawBody as Record<string, unknown>;
+        if (typeof body["email"] !== "string" || typeof body["password"] !== "string") {
+          throw new CatalogValidationError("email and password are required.");
+        }
+        sendJson(response, 201, await options.auth.registerCustomer(body["email"], body["password"]));
         return;
       }
 

@@ -113,15 +113,20 @@ export class SessionAuthService {
     let userId = "";
     try {
       await connection.beginTransaction();
-      const [existingUsers] = await connection.query<RowDataPacket[]>(
-        "SELECT id FROM users LIMIT 1 FOR UPDATE",
+      await connection.query(
+        "INSERT IGNORE INTO roles (id, name) VALUES ('role-admin', 'admin'), ('role-customer', 'customer')",
       );
-      if (existingUsers.length > 0) {
+      // Serialize bootstrap attempts on the admin role row. Customer self-
+      // registration does not close the one-time administrator bootstrap.
+      await connection.query("SELECT id FROM roles WHERE id = 'role-admin' FOR UPDATE");
+      const [existingAdmins] = await connection.query<RowDataPacket[]>(
+        "SELECT user_id FROM user_roles WHERE role_id = 'role-admin' LIMIT 1",
+      );
+      if (existingAdmins.length > 0) {
         throw new AuthenticationError("Admin bootstrap has already been completed.", "BOOTSTRAP_CLOSED", 409);
       }
       userId = randomUUID();
       const passwordHash = await hashPassword(password);
-      await connection.query("INSERT INTO roles (id, name) VALUES ('role-admin', 'admin'), ('role-customer', 'customer')");
       await connection.query(
         "INSERT INTO users (id, email, password_hash, status) VALUES (?, ?, ?, 'active')",
         [userId, email, passwordHash],
@@ -136,6 +141,40 @@ export class SessionAuthService {
       connection.release();
     }
     return this.createSession(userId, email, ["admin"]);
+  }
+
+  async registerCustomer(emailInput: string, password: string): Promise<AuthSession> {
+    const email = this.validateEmail(emailInput);
+    this.validatePassword(password);
+    const connection = await this.pool.getConnection();
+    const userId = randomUUID();
+    try {
+      await connection.beginTransaction();
+      await connection.query(
+        "INSERT IGNORE INTO roles (id, name) VALUES ('role-customer', 'customer')",
+      );
+      const passwordHash = await hashPassword(password);
+      await connection.query(
+        "INSERT INTO users (id, email, password_hash, status) VALUES (?, ?, ?, 'active')",
+        [userId, email, passwordHash],
+      );
+      await connection.query(
+        "INSERT INTO user_roles (user_id, role_id) VALUES (?, 'role-customer')",
+        [userId],
+      );
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      if (error instanceof AuthenticationError) throw error;
+      throw new AuthenticationError(
+        "Account could not be created. The email may already be registered.",
+        "REGISTRATION_FAILED",
+        409,
+      );
+    } finally {
+      connection.release();
+    }
+    return this.createSession(userId, email, ["customer"]);
   }
 
   async login(emailInput: string, password: string): Promise<AuthSession> {

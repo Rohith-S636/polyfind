@@ -106,7 +106,11 @@ const outboxWorker = databasePool && outboxTargets.length > 0
 const relational = databasePool ? new RelationalRepository(databasePool, redis) : new InMemoryRelationalStore();
 const apiServer = createApiServer({
   relational,
-  ...(catalogRepository ? { productList: (query) => catalogRepository!.listProducts(query) } : {}),
+  ...(catalogRepository ? {
+    productList: (query) => catalogRepository!.listProducts(query),
+    createProduct: (input) => catalogRepository!.createProduct(input),
+    updateProduct: (id, patch, expectedVersion) => catalogRepository!.updateProduct(id, patch, expectedVersion),
+  } : {}),
   authSecret,
   catalog,
   search: new SearchService({

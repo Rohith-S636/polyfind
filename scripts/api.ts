@@ -156,6 +156,7 @@ const shutdown = async () => {
   await redis?.close();
   await closeNeo4j(graph);
   await vector.close();
+  await databasePool?.end();
   process.exit(0);
 };
 process.on("SIGINT", shutdown);

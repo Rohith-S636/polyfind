@@ -157,7 +157,10 @@ const nextProc = spawn(`npx next start web -p ${webPort}`, {
   },
 });
 
+let shuttingDown = false;
 const cleanup = async () => {
+  if (shuttingDown) return;
+  shuttingDown = true;
   console.log("\nShutting down PolyFind production services...");
   try {
     await apiServer.stop();
@@ -168,7 +171,19 @@ const cleanup = async () => {
   await closeNeo4j(graph);
   await vector.close();
   await databasePool?.end();
-  nextProc.kill("SIGINT");
+  if (nextProc.exitCode === null && !nextProc.killed) {
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        nextProc.kill("SIGKILL");
+        resolve();
+      }, 5_000);
+      nextProc.once("exit", () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+      nextProc.kill("SIGINT");
+    });
+  }
   process.exit(0);
 };
 

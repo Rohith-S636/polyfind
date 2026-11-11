@@ -17,6 +17,7 @@ import {
   initializeNeo4j,
   closeNeo4j,
   createVectorRuntimeFromEnvironment,
+  VectorIngestionService,
   MySqlOutboxStore,
   OutboxWorker,
   RedisOutboxTarget,
@@ -77,6 +78,22 @@ if (mode === "demo") {
 }
 
 if (redis) catalog = new CachedCatalogReader(catalog, redis);
+const vectorEmbedder = vector.getEmbedder();
+if (vector.getSemanticProvider() && vectorEmbedder) {
+  const ingestion = new VectorIngestionService(vector.getStore(), vectorEmbedder);
+  const pageSize = 100;
+  let page = 1;
+  let ingested = 0;
+  while (true) {
+    const batch = await catalog.listProducts({ page, limit: pageSize });
+    if (batch.items.length === 0) break;
+    const result = await ingestion.ingestBatch(batch.items);
+    ingested += result.totalIngested;
+    if (page * pageSize >= batch.total) break;
+    page += 1;
+  }
+  console.log(`[PolyFind Vector] Verified local/remote embeddings and indexed ${ingested} authoritative products.`);
+}
 const semanticProvider = vector.getSemanticProvider();
 const graphProvider = graph ? new Neo4jGraphRetrievalProvider(graph as Neo4jGraphAdapter) : undefined;
 const outboxTargets = [

@@ -46,12 +46,12 @@ export function buildProductEmbeddingText(product: {
 }
 
 /**
- * Fast, deterministic L2-normalized embedding generator.
- * Generates reproducible unit vectors for local offline execution and unit testing.
- * Uses 384 dimensions matching all-MiniLM-L6-v2 architecture.
+ * Local deterministic feature-hashing vectorizer. This is a lexical vector
+ * baseline, not a pretrained language model; it requires no API key or network.
+ * Word, bigram, and character-trigram features produce repeatable unit vectors.
  */
 export class DeterministicEmbeddingProvider implements TextEmbeddingProvider {
-  public readonly modelName = "all-MiniLM-L6-v2-deterministic";
+  public readonly modelName = "polyfind-feature-hash-v1";
   public readonly dimensions: number;
 
   constructor(dimensions = 384) {
@@ -65,27 +65,35 @@ export class DeterministicEmbeddingProvider implements TextEmbeddingProvider {
   async embed(text: string): Promise<number[]> {
     const cleaned = this.preprocess(text);
     const vector = new Array<number>(this.dimensions).fill(0);
+    const tokens = cleaned.match(/[\\p{L}\\p{N}]+/gu) ?? [];
+    const addFeature = (feature: string, weight: number): void => {
+      let hash = 0x811c9dc5;
+      for (const character of feature) {
+        hash ^= character.codePointAt(0) ?? 0;
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+      }
+      const slot = hash % this.dimensions;
+      const sign = (hash & 0x80000000) === 0 ? 1 : -1;
+      vector[slot] = (vector[slot] ?? 0) + sign * weight;
+    };
 
-    for (let i = 0; i < cleaned.length; i++) {
-      const code = cleaned.charCodeAt(i);
-      const slot = (code * 37 + i * 17) % this.dimensions;
-      vector[slot] = (vector[slot] ?? 0) + (code % 7) + 1;
-    }
-
-    // Compute Euclidean L2 norm
-    let sumSq = 0;
-    for (let i = 0; i < this.dimensions; i++) {
-      const v = vector[i] ?? 0;
-      sumSq += v * v;
-    }
-    const norm = Math.sqrt(sumSq);
-
-    if (norm > 0) {
-      for (let i = 0; i < this.dimensions; i++) {
-        vector[i] = (vector[i] ?? 0) / norm;
+    for (let index = 0; index < tokens.length; index += 1) {
+      const token = tokens[index]!;
+      addFeature(`w:${token}`, 2);
+      if (index > 0) addFeature(`b:${tokens[index - 1]}_${token}`, 1.25);
+      if (token.length >= 3) {
+        for (let offset = 0; offset <= token.length - 3; offset += 1) {
+          addFeature(`c:${token.slice(offset, offset + 3)}`, 0.2);
+        }
       }
     }
 
+    const norm = Math.sqrt(vector.reduce((sum, value) => sum + value * value, 0));
+    if (norm > 0) {
+      for (let index = 0; index < vector.length; index += 1) {
+        vector[index] = (vector[index] ?? 0) / norm;
+      }
+    }
     return vector;
   }
 

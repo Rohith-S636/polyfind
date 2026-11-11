@@ -28,8 +28,9 @@ test("vector runtime initializes LanceDB independently and shuts down idempotent
     await runtime.initialize();
     assert.equal(runtime.getHealth().store, "connected");
     assert.equal(runtime.getHealth().table, "ready");
-    assert.equal(runtime.getHealth().embedding, "not-configured");
-    assert.equal(runtime.getSemanticProvider(), undefined);
+    assert.equal(runtime.getHealth().embedding, "local-deterministic");
+    assert.equal(runtime.getHealth().embeddingVerified, true);
+    assert.ok(runtime.getSemanticProvider());
     await runtime.close();
     await runtime.close();
     assert.equal(runtime.getHealth().state, "closed");

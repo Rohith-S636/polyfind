@@ -8,14 +8,14 @@ services:
     environment:
       MYSQL_DATABASE: polyfind
       MYSQL_USER: polyfind
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
     volumes:
       - polyfind-mysql:/var/lib/mysql
     ports:
       - "3306:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "polyfind", "-pchange-me"]
+      test: ["CMD-SHELL", "MYSQL_PWD=\"${MYSQL_PASSWORD}\" mysqladmin ping -h 127.0.0.1 -u polyfind --silent"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -53,20 +53,6 @@ services:
       timeout: 5s
       retries: 20
 
-  # ─── Qdrant (vector store) ──────────────────────────────────────────────────
-  qdrant:
-    image: qdrant/qdrant:latest
-    volumes:
-      - polyfind-qdrant:/qdrant/storage
-    ports:
-      - "6333:6333"   # REST API
-      - "6334:6334"   # gRPC
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:6333/readyz || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
   # ─── App (production Docker deployment only) ─────────────────────────────────
   # For local development, run: npm run dev
   # This service is for full Docker-stack or production builds only.
@@ -75,14 +61,14 @@ services:
     environment:
       NODE_ENV: production
       CATALOG_MODE: live
-      DATABASE_URL: mysql://polyfind:${MYSQL_PASSWORD:-change-me}@mysql:3306/polyfind
+      DATABASE_URL: mysql://polyfind:${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}@mysql:3306/polyfind
       REDIS_URL: redis://redis:6379
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USERNAME: neo4j
       NEO4J_PASSWORD: ${NEO4J_PASSWORD:-PolyFindNeo4j2026!}
       NEO4J_DATABASE: ${NEO4J_DATABASE:-neo4j}
-      VECTOR_STORE_PROVIDER: ${VECTOR_STORE_PROVIDER:-}
-      VECTOR_STORE_URL: http://qdrant:6333
+      LANCEDB_PATH: /app/data/lancedb
+      LANCEDB_TABLE: ${LANCEDB_TABLE:-product_embeddings}
       APP_URL: ${APP_URL:-http://localhost:3000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       API_PORT: 3001
@@ -90,6 +76,8 @@ services:
       AUTH_BOOTSTRAP_TOKEN: ${AUTH_BOOTSTRAP_TOKEN:-}
     ports:
       - "3000:3000"
+    volumes:
+      - polyfind-lancedb:/app/data/lancedb
     depends_on:
       mysql:
         condition: service_healthy
@@ -97,12 +85,10 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_healthy
-      qdrant:
-        condition: service_healthy
 
 volumes:
   polyfind-mysql:
   polyfind-redis:
   polyfind-neo4j-data:
   polyfind-neo4j-logs:
-  polyfind-qdrant:
+  polyfind-lancedb:

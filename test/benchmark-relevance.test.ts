@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   BENCHMARK_QUERY_SET,
   GROUND_TRUTH_LABELS,
+  generateSeedDataset,
   dcgAtK,
   evaluateAllQueries,
   evaluateQueryResult,
@@ -117,6 +118,26 @@ test("unknown evaluation query IDs are rejected", () => {
   );
 });
 
+test("seed-42 relevance judgments reference real catalogue products and valid filters", () => {
+  const dataset = generateSeedDataset({ seed: 42, productCount: 50 });
+  const productIds = new Set(dataset.products.map((product) => product.id));
+  const categoryIds = new Set(dataset.categories.map((category) => category.id));
+
+  for (const judgments of Object.values(GROUND_TRUTH_LABELS)) {
+    for (const [productId, grade] of judgments) {
+      assert.ok(productIds.has(productId), `judgment references missing seed product: ${productId}`);
+      assert.ok(Number.isInteger(grade) && grade >= 1 && grade <= 3);
+    }
+  }
+  for (const query of BENCHMARK_QUERY_SET) {
+    if (query.filters?.categoryId) {
+      assert.ok(categoryIds.has(query.filters.categoryId), `query ${query.queryId} uses missing category ${query.filters.categoryId}`);
+    }
+  }
+  assert.equal(BENCHMARK_QUERY_SET.find((query) => query.queryId === "q-02")?.filters?.categoryId, "cat-outdoors");
+  assert.equal(BENCHMARK_QUERY_SET.find((query) => query.queryId === "q-09")?.filters?.categoryId, "cat-kitchen");
+});
+
 test("evaluation methodology and limitations are documented", async () => {
   const docPath = path.resolve(process.cwd(), "docs/RELEVANCE_EVALUATION_METHODOLOGY.md");
   const content = await fs.readFile(docPath, "utf-8");
@@ -142,10 +163,10 @@ test("all retrieval methods are evaluated on the identical standard query set", 
   assert.equal(emptyReport.averages[3]?.meanPrecision, 0);
 
   // Evaluate sample query
-  const sampleResult = evaluateQueryResult("q-01", ["prod-0001", "prod-0002", "prod-0010"]);
+  const sampleResult = evaluateQueryResult("q-01", ["prod-0005", "prod-0027"]);
   assert.equal(sampleResult.queryId, "q-01");
   const m3 = sampleResult.metrics.find((m) => m.k === 3);
   assert.ok(m3);
-  assert.equal(m3.precision, 1.0);
-  assert.ok(m3.ndcg > 0.9);
+  assert.equal(m3.precision, 2 / 3);
+  assert.equal(m3.ndcg, 1);
 });

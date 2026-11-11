@@ -413,6 +413,8 @@ test("16. API response compatibility: SearchResponse adheres strictly to contrac
   assert.ok(validated.timings.totalMs >= 0);
   assert.equal(validated.freshness.mode, "strict");
   assert.equal(validated.freshness.status, "verified");
+  assert.equal(validated.cacheHit, false);
+  assert.ok(validated.sourceTimings && Object.values(validated.sourceTimings).every((value) => Number.isFinite(value) && value >= 0));
 });
 
 test("17. MySqlKeywordRetrievalProvider builds parameterized SQL with LIKE and structured filters", async () => {

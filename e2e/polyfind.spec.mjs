@@ -126,6 +126,11 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await historySection.getByRole("button", { name: "Load history" }).click();
   await expect(historySection.getByText(/offer v2/)).toBeVisible();
 
+  await adminPage.goto(`${baseUrl}/`);
+  await adminPage.getByRole("searchbox", { name: "Search products by title, keyword, or description" }).fill(productName);
+  await adminPage.getByRole("button", { name: "Submit search" }).click();
+  await expect(adminPage.getByText(productName).first()).toBeVisible();
+
   await adminPage.goto(`${baseUrl}/products/${productId}`);
   await expect(adminPage.getByRole("heading", { name: productName })).toBeVisible();
   await expect(adminPage.getByRole("heading", { name: "Compare seller offers" })).toBeVisible();

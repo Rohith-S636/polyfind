@@ -79,6 +79,20 @@ npm run build
 
 GitHub Actions runs disposable MySQL, Redis, and Neo4j services and tests LanceDB persistence on a temporary filesystem path. Use the latest workflow run for the current pass/fail result.
 
+## Optional browser acceptance test
+
+The Playwright journey covers customer registration and role denial, first-admin bootstrap/login, product/brand/seller/variant/offer creation, offer update and price history, public search, and seller price comparison.
+
+Run it **only against a disposable local catalogue**. It creates accounts and catalogue records and is not a cleanup/reset script. CI runs it against fresh Compose volumes and removes those CI-only volumes afterwards.
+
+```powershell
+npm install --no-save @playwright/test@1.57.0
+npx playwright install chromium
+$env:POLYFIND_E2E_BASE_URL = "http://localhost:3000"
+$env:POLYFIND_E2E_BOOTSTRAP_TOKEN = "<the AUTH_BOOTSTRAP_TOKEN from your disposable .env>"
+npx playwright test e2e/polyfind.spec.mjs --workers=1
+```
+
 ## Authentication
 
 - Public browsing and search are anonymous.

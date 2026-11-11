@@ -30,6 +30,16 @@ function makeProduct(
 
 const AUTH_SECRET = "test-phase10-auth-secret-xyz";
 
+function createTestAuth() {
+  return {
+    async authenticate(token: string) {
+      return token === AUTH_SECRET
+        ? { id: "admin-test", email: "admin@example.test", roles: ["admin"] }
+        : null;
+    },
+  };
+}
+
 function createTestServer() {
   const catalog = new InMemoryCatalog([
     makeProduct("prod-001", "Summit Tent 2P", "Lightweight backpacking tent", 299.99, 1, "tents", 5),
@@ -123,7 +133,7 @@ function createTestServer() {
   const api = createApiServer({
     catalog,
     relational,
-    authSecret: AUTH_SECRET,
+    auth: createTestAuth(),
   });
 
   return { api, catalog, relational };
@@ -641,7 +651,7 @@ test("18. Product catalogue POST and PUT routes authenticate and delegate versio
   const api = createApiServer({
     catalog: new InMemoryCatalog([original]),
     relational: new InMemoryRelationalStore(),
-    authSecret: AUTH_SECRET,
+    auth: createTestAuth(),
     createProduct: async (input) => makeProduct(input.id, input.name, input.description, input.price, 1, input.categoryId, input.stock),
     updateProduct: async (id, patch, expectedVersion) => {
       assert.equal(id, original.id);

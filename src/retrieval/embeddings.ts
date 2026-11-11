@@ -65,7 +65,7 @@ export class DeterministicEmbeddingProvider implements TextEmbeddingProvider {
   async embed(text: string): Promise<number[]> {
     const cleaned = this.preprocess(text);
     const vector = new Array<number>(this.dimensions).fill(0);
-    const tokens = cleaned.match(/[\\p{L}\\p{N}]+/gu) ?? [];
+    const tokens = cleaned.match(/[\p{L}\p{N}]+/gu) ?? [];
     const addFeature = (feature: string, weight: number): void => {
       let hash = 0x811c9dc5;
       for (const character of feature) {

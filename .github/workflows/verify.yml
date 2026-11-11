@@ -101,6 +101,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install project dependencies and Playwright
+        run: |
+          npm ci
+          npm install --no-save @playwright/test@1.57.0
+          npx playwright install --with-deps chromium
       - name: Create disposable Compose environment
         run: |
           cat > .env <<'EOF'
@@ -128,6 +136,10 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:3000/api/ready
           curl --fail --silent --show-error http://127.0.0.1:3000/ > /dev/null
           node -e "fetch('http://127.0.0.1:3000/api/products').then(async r => { const body = await r.json(); if (!r.ok || Number(body.total) < 50) throw new Error('Expected at least 50 seeded products; received ' + body.total); console.log('Docker UI/API smoke test passed with ' + body.total + ' products.'); }).catch(error => { console.error(error); process.exitCode = 1; });"
+      - name: Run browser acceptance for customer and administrator journeys
+        env:
+          POLYFIND_E2E_BOOTSTRAP_TOKEN: ci-polyfind-bootstrap-token-with-more-than-32-characters
+        run: npx playwright test e2e/polyfind.spec.mjs --workers=1 --reporter=line --timeout=60000 --global-timeout=240000
       - name: Collect Compose logs on failure
         if: failure()
         run: docker compose logs --no-color

@@ -45,7 +45,7 @@ State the limitations:
 - local feature hashing is lexical vector similarity, not transformer semantic understanding;
 - benchmark claims require reproducible measured artifacts and reviewed relevance judgments;
 - public hosting is not certified until the deployed commit and all dependencies are smoke-tested;
-- browser token storage still needs HttpOnly cookie/CSRF hardening for production.
+- browser sessions use an HttpOnly, SameSite=Strict cookie (Secure in production); deployment-specific Origin/CSRF verification and shared rate limiting remain hardening work.
 Conclude: PolyFind demonstrates an authoritative relational core with derived cache, graph, and vector retrieval, with freshness and role boundaries that are testable.
 
 ## Extended viva backup

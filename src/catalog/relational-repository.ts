@@ -81,6 +81,8 @@ export interface ListPriceHistoryOptions {
 }
 
 export interface RelationalStore {
+  createBrand(input: BrandInput): Promise<void>;
+  createProductVariant(input: ProductVariantInput): Promise<void>;
   createSeller(input: SellerInput): Promise<Seller>;
   getSeller(id: string): Promise<Seller | null>;
   listSellers(options?: ListSellersOptions): Promise<{ items: Seller[]; page: number; limit: number; total: number }>;
@@ -872,6 +874,8 @@ export class RelationalRepository implements RelationalStore {
 }
 
 export class InMemoryRelationalStore implements RelationalStore {
+  private readonly brands = new Map<string, BrandInput>();
+  private readonly variants = new Map<string, ProductVariantInput>();
   private readonly sellers = new Map<string, Seller>();
   private readonly offers = new Map<string, Offer>();
   private readonly history: PriceHistoryEntry[] = [];
@@ -982,6 +986,26 @@ export class InMemoryRelationalStore implements RelationalStore {
       );
       this.historyIdCounter = 3;
     }
+  }
+
+  async createBrand(input: BrandInput): Promise<void> {
+    const id = validateId(input.id, "Brand ID");
+    const name = validateId(input.name, "Brand name");
+    const slug = validateId(input.slug, "Brand slug");
+    if (Array.from(this.brands.values()).some((brand) => brand.slug === slug)) {
+      throw new CatalogValidationError("Brand slug already exists.");
+    }
+    this.brands.set(id, { ...input, id, name, slug });
+  }
+
+  async createProductVariant(input: ProductVariantInput): Promise<void> {
+    const id = validateId(input.id, "Variant ID");
+    const productId = validateId(input.productId, "Product ID");
+    const variantKey = validateId(input.variantKey, "Variant key");
+    if (!input.attributes || typeof input.attributes !== "object" || Array.isArray(input.attributes)) {
+      throw new CatalogValidationError("Variant attributes must be an object.");
+    }
+    this.variants.set(id, { ...input, id, productId, variantKey, attributes: { ...input.attributes } });
   }
 
   async getSeller(id: string): Promise<Seller | null> {

@@ -72,7 +72,7 @@ function sendJson(response: ServerResponse, status: number, body: unknown): void
   response.setHeader("Content-Type", "application/json; charset=utf-8");
   response.setHeader("Content-Length", Buffer.byteLength(payload));
   response.setHeader("Access-Control-Allow-Origin", response.getHeader("Access-Control-Allow-Origin") ?? "*");
-  response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS");
   response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
   response.end(payload);
 }
@@ -105,6 +105,28 @@ function errorResponse(error: unknown): { status: number; body: object } {
     return { status: 503, body: { error: { code: error.code, message: error.message } } };
   }
   return { status: 500, body: { error: { code: "INTERNAL_ERROR", message: "The request could not be completed." } } };
+}
+
+function consumeAuthAttempt(
+  attempts: Map<string, { startedAt: number; count: number }>,
+  key: string,
+  maximum: number,
+  windowMs: number,
+): boolean {
+  const now = Date.now();
+  const current = attempts.get(key);
+  if (!current || now - current.startedAt >= windowMs) {
+    attempts.set(key, { startedAt: now, count: 1 });
+    return true;
+  }
+  if (current.count >= maximum) return false;
+  current.count += 1;
+  if (attempts.size > 10_000) {
+    for (const [entryKey, bucket] of attempts) {
+      if (now - bucket.startedAt >= windowMs) attempts.delete(entryKey);
+    }
+  }
+  return true;
 }
 
 function getBearerToken(request: IncomingMessage): string | null {
@@ -255,6 +277,7 @@ async function handle(
   response: ServerResponse,
   options: ApiServerOptions,
   requestCounts: Map<string, { startedAt: number; count: number }>,
+  authAttempts: Map<string, { startedAt: number; count: number }>,
 ): Promise<void> {
   const origin = options.corsOrigin ?? "*";
   setSecurityHeaders(response, origin);
@@ -477,7 +500,14 @@ async function handle(
         if (typeof body["email"] !== "string" || typeof body["password"] !== "string" || typeof body["bootstrapToken"] !== "string") {
           throw new CatalogValidationError("email, password, and bootstrapToken are required.");
         }
+        const attemptKey = clientKey + ":bootstrap:" + body["email"].trim().toLowerCase();
+        if (!consumeAuthAttempt(authAttempts, attemptKey, 5, 15 * 60 * 1000)) {
+          response.setHeader("Retry-After", "900");
+          sendJson(response, 429, { error: { code: "AUTH_RATE_LIMITED", message: "Too many bootstrap attempts. Try again in 15 minutes." } });
+          return;
+        }
         const session = await options.auth.bootstrapAdmin(body["email"], body["password"], body["bootstrapToken"]);
+        authAttempts.delete(attemptKey);
         sendJson(response, 201, session);
         return;
       }
@@ -494,7 +524,15 @@ async function handle(
         if (typeof body["email"] !== "string" || typeof body["password"] !== "string") {
           throw new CatalogValidationError("email and password are required.");
         }
-        sendJson(response, 201, await options.auth.registerCustomer(body["email"], body["password"]));
+        const attemptKey = clientKey + ":register:" + body["email"].trim().toLowerCase();
+        if (!consumeAuthAttempt(authAttempts, attemptKey, 5, 15 * 60 * 1000)) {
+          response.setHeader("Retry-After", "900");
+          sendJson(response, 429, { error: { code: "AUTH_RATE_LIMITED", message: "Too many registration attempts. Try again in 15 minutes." } });
+          return;
+        }
+        const session = await options.auth.registerCustomer(body["email"], body["password"]);
+        authAttempts.delete(attemptKey);
+        sendJson(response, 201, session);
         return;
       }
 
@@ -506,7 +544,15 @@ async function handle(
         if (typeof body["email"] !== "string" || typeof body["password"] !== "string") {
           throw new CatalogValidationError("email and password are required.");
         }
-        sendJson(response, 200, await options.auth.login(body["email"], body["password"]));
+        const attemptKey = clientKey + ":login:" + body["email"].trim().toLowerCase();
+        if (!consumeAuthAttempt(authAttempts, attemptKey, 10, 15 * 60 * 1000)) {
+          response.setHeader("Retry-After", "900");
+          sendJson(response, 429, { error: { code: "AUTH_RATE_LIMITED", message: "Too many login attempts. Try again in 15 minutes." } });
+          return;
+        }
+        const session = await options.auth.login(body["email"], body["password"]);
+        authAttempts.delete(attemptKey);
+        sendJson(response, 200, session);
         return;
       }
 
@@ -537,6 +583,7 @@ async function handle(
         const input: CreateProductInput = {
           id: body["id"], name: body["name"], description: body["description"],
           categoryId: body["categoryId"], price: body["price"], stock: body["stock"],
+          ...(typeof body["currency"] === "string" ? { currency: body["currency"].toUpperCase() } : {}),
           actorUserId: actor.id,
         };
         const created = await options.createProduct(input);
@@ -887,8 +934,9 @@ export function createApiServer(options: ApiServerOptions): ApiServer {
     relational: options.relational ?? new InMemoryRelationalStore(),
   };
   const requestCounts = new Map<string, { startedAt: number; count: number }>();
+  const authAttempts = new Map<string, { startedAt: number; count: number }>();
   const server = createServer((request, response) => {
-    void handle(request, response, resolvedOptions, requestCounts);
+    void handle(request, response, resolvedOptions, requestCounts, authAttempts);
   });
   return {
     server,

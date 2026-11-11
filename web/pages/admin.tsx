@@ -109,12 +109,13 @@ export default function AdminPage() {
       {error && <p role="alert" style={{ color: "var(--error-text)", margin: "1rem 0" }}>{error}</p>}
       {notice && <p role="status" style={{ color: "var(--success-text)", margin: "1rem 0" }}>{notice}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "1rem", marginTop: "1.5rem" }}>
-        <form style={panel} onSubmit={(e) => submitJson(e, "/api/products", (d) => ({ id: d.get("id"), name: d.get("name"), description: d.get("description"), categoryId: d.get("categoryId"), price: Number(d.get("price")), stock: Number(d.get("stock")) }), "Product created.")}>
+        <form style={panel} onSubmit={(e) => submitJson(e, "/api/products", (d) => ({ id: d.get("id"), name: d.get("name"), description: d.get("description"), categoryId: d.get("categoryId"), price: Number(d.get("price")), stock: Number(d.get("stock")), currency: String(d.get("currency") ?? "INR").toUpperCase() }), "Product created.")}>
           <h2 style={{ fontWeight: 750 }}>Create product</h2>
           <input name="id" placeholder="Product ID" required style={field} />
           <input name="name" placeholder="Product name" required style={field} />
           <textarea name="description" placeholder="Description" required style={field} />
           <input name="categoryId" placeholder="Category ID (e.g. cat-outdoors)" required style={field} />
+          <input name="currency" defaultValue="INR" maxLength={3} required style={field} />
           <input name="price" type="number" min="0" step="0.01" placeholder="Base price" required style={field} />
           <input name="stock" type="number" min="0" step="1" placeholder="Stock" required style={field} />
           <button disabled={busy} style={button}>Create product</button>

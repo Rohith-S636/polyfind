@@ -31,6 +31,7 @@ export interface CreateProductInput {
   categoryId: string;
   price: number;
   stock: number;
+  currency?: string;
   version?: number;
   actorUserId?: string;
 }
@@ -326,6 +327,9 @@ export class CatalogRepository {
     if (typeof input.stock !== "number" || input.stock < 0 || !Number.isInteger(input.stock)) {
       throw new CatalogValidationError("Product stock must be a non-negative integer.");
     }
+    if (input.currency !== undefined && !/^[A-Z]{3}$/.test(input.currency)) {
+      throw new CatalogValidationError("Product currency must be a three-letter uppercase ISO code.");
+    }
 
     const version = input.version !== undefined ? Math.max(1, input.version) : 1;
     const connection = await this.pool.getConnection();
@@ -342,7 +346,7 @@ export class CatalogRepository {
           input.description.trim(),
           input.categoryId.trim(),
           input.price,
-          "USD",
+          input.currency ?? "USD",
           input.stock,
           input.stock > 0 ? "in-stock" : "out-of-stock",
           null,

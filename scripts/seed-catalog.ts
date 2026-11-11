@@ -71,6 +71,7 @@ async function main(): Promise<void> {
           categoryId: product.categoryId,
           price: product.price,
           stock: product.stock,
+          currency: product.currency ?? "USD",
         });
         productsCreated += 1;
       }

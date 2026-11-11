@@ -61,12 +61,13 @@ export default function AdminPage() {
 
   async function submitJson(event: FormEvent<HTMLFormElement>, url: string, build: (data: FormData) => unknown, label: string) {
     event.preventDefault();
+    const form = event.currentTarget;
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      await api(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(build(new FormData(event.currentTarget))) });
-      event.currentTarget.reset();
+      await api(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(build(new FormData(form))) });
+      form.reset();
       await refresh();
       setNotice(label);
     } catch (caught) {

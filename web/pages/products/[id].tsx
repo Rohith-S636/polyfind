@@ -16,6 +16,9 @@ export default function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [healthError, setHealthError] = useState(false);
+  const [offers, setOffers] = useState<Array<{ id: string; sellerId: string; currency: string; price: number; stockQuantity: number | null; availability: string }>>([]);
+  const [sellerNames, setSellerNames] = useState<Record<string, string>>({});
+  const [priceHistory, setPriceHistory] = useState<Array<{ id: number; offerId: string; sellerId: string; currency: string; price: number; recordedAt: string }>>([]);
 
   useEffect(() => {
     fetchHealth()
@@ -43,6 +46,27 @@ export default function ProductDetailPage() {
         setLoading(false);
       });
   }, [router.isReady, id]);
+
+  useEffect(() => {
+    if (!product) return;
+    let active = true;
+    Promise.all([
+      fetch(`/api/offers?productId=${encodeURIComponent(product.id)}&page=1&limit=100`).then((r) => r.ok ? r.json() : Promise.reject(new Error("Offers unavailable"))),
+      fetch("/api/sellers?page=1&limit=100").then((r) => r.ok ? r.json() : Promise.reject(new Error("Sellers unavailable"))),
+      fetch(`/api/price-history?productId=${encodeURIComponent(product.id)}&page=1&limit=100`).then((r) => r.ok ? r.json() : Promise.reject(new Error("Price history unavailable"))),
+    ]).then(([offerData, sellerData, historyData]) => {
+      if (!active) return;
+      setOffers(offerData.items ?? []);
+      setSellerNames(Object.fromEntries((sellerData.items ?? []).map((seller: { id: string; name: string }) => [seller.id, seller.name])));
+      setPriceHistory(historyData.items ?? []);
+    }).catch(() => {
+      if (active) {
+        setOffers([]);
+        setPriceHistory([]);
+      }
+    });
+    return () => { active = false; };
+  }, [product]);
 
   const title = product ? `${product.name} — PolyFind` : "Product Detail — PolyFind";
 
@@ -153,6 +177,43 @@ export default function ProductDetailPage() {
                 </table>
               </div>
             )}
+
+            <section style={{ borderTop: "1px solid var(--border-color)", paddingTop: "1.25rem", marginTop: "1.25rem" }}>
+              <h2 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "0.75rem" }}>Compare seller offers</h2>
+              {offers.length === 0 ? (
+                <p style={{ color: "var(--text-secondary)" }}>No seller-specific offers have been added for this synthetic catalogue item yet.</p>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="attributes-table" aria-label="Seller price comparison">
+                    <thead><tr><th>Seller</th><th>Price</th><th>Availability</th><th>Stock</th></tr></thead>
+                    <tbody>
+                      {[...offers].sort((left, right) => left.price - right.price).map((offer) => (
+                        <tr key={offer.id}>
+                          <td>{sellerNames[offer.sellerId] ?? offer.sellerId}</td>
+                          <td><strong>{offer.currency} {offer.price.toFixed(2)}</strong></td>
+                          <td>{offer.availability}</td>
+                          <td>{offer.stockQuantity ?? "Unknown"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            <section style={{ borderTop: "1px solid var(--border-color)", paddingTop: "1.25rem", marginTop: "1.25rem" }}>
+              <h2 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "0.75rem" }}>Offer price history</h2>
+              {priceHistory.length === 0 ? <p style={{ color: "var(--text-secondary)" }}>No historical offer changes recorded yet.</p> : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="attributes-table" aria-label="Offer price history">
+                    <thead><tr><th>Recorded</th><th>Seller</th><th>Price</th></tr></thead>
+                    <tbody>{priceHistory.map((entry) => (
+                      <tr key={entry.id}><td>{new Date(entry.recordedAt).toLocaleString()}</td><td>{sellerNames[entry.sellerId] ?? entry.sellerId}</td><td>{entry.currency} {entry.price.toFixed(2)}</td></tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              )}
+            </section>
 
             <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "1rem", display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "var(--text-muted)", flexWrap: "wrap", gap: "0.5rem" }}>
               <span>Version: <strong>{product.version}</strong></span>

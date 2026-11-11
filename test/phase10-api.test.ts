@@ -444,7 +444,7 @@ test("10. Validation handles missing fields and invalid types with 400 Bad Reque
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": AUTH_SECRET,
+        Authorization: `Bearer ${AUTH_SECRET}`,
       },
       body: JSON.stringify({
         id: "offer-bad",
@@ -462,7 +462,7 @@ test("10. Validation handles missing fields and invalid types with 400 Bad Reque
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": AUTH_SECRET,
+        Authorization: `Bearer ${AUTH_SECRET}`,
       },
       body: JSON.stringify({
         id: "offer-neg",
@@ -480,7 +480,7 @@ test("10. Validation handles missing fields and invalid types with 400 Bad Reque
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": AUTH_SECRET,
+        Authorization: `Bearer ${AUTH_SECRET}`,
       },
       body: JSON.stringify({
         price: 250,

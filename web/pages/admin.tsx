@@ -77,6 +77,61 @@ export default function AdminPage() {
     }
   }
 
+  async function updateProduct(event: FormEvent<HTMLFormElement>, product: Product) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await api(`/api/products/${encodeURIComponent(product.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expectedVersion: product.version,
+          price: Number(data.get("price")),
+          stock: Number(data.get("stock")),
+        }),
+      });
+      await refresh();
+      setNotice(`Updated ${product.name}; the product version was advanced.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Product update failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updateOffer(event: FormEvent<HTMLFormElement>, offer: Offer) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const stockQuantity = Number(data.get("stockQuantity"));
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await api(`/api/offers/${encodeURIComponent(offer.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expectedVersion: offer.version,
+          price: Number(data.get("price")),
+          stockQuantity,
+          availability: stockQuantity > 0 ? "available" : "unavailable",
+          changeReason: "admin_ui_update",
+        }),
+      });
+      await refresh();
+      setNotice(`Updated offer ${offer.id}; price history was recorded.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Offer update failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function loadHistory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -161,9 +216,23 @@ export default function AdminPage() {
       <section style={{ marginTop: "2rem" }}>
         <h2 style={{ fontSize: "1.35rem", fontWeight: 800 }}>Catalogue and seller data</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: "1rem", marginTop: "0.8rem" }}>
-          <div style={panel}><h3>Products ({products.length})</h3>{products.slice(0,12).map((p) => <p key={p.id}>{p.name} <small>· {p.id} · v{p.version}</small></p>)}</div>
+          <div style={panel}><h3>Products ({products.length})</h3>{products.slice(0,12).map((p) => (
+            <form key={p.id} onSubmit={(e) => updateProduct(e, p)} style={{ borderTop: "1px solid var(--border-color)", paddingTop: "0.6rem", display: "grid", gap: "0.4rem" }}>
+              <strong>{p.name}</strong><small>{p.id} · version {p.version} · {p.currency ?? "USD"}</small>
+              <input name="price" type="number" min="0" step="0.01" defaultValue={p.price} required style={field} aria-label={p.name + " base price"} />
+              <input name="stock" type="number" min="0" step="1" defaultValue={p.stock} required style={field} aria-label={p.name + " stock"} />
+              <button disabled={busy} style={button}>Save product changes</button>
+            </form>
+          ))}</div>
           <div style={panel}><h3>Sellers ({sellers.length})</h3>{sellers.map((s) => <p key={s.id}>{s.name} <small>· {s.id}</small></p>)}</div>
-          <div style={panel}><h3>Offers ({offers.length})</h3>{offers.slice(0,15).map((o) => <p key={o.id}>{o.currency} {o.price.toFixed(2)} <small>· {o.productId} · {o.sellerId}</small></p>)}</div>
+          <div style={panel}><h3>Offers ({offers.length})</h3>{offers.slice(0,15).map((o) => (
+            <form key={o.id} onSubmit={(e) => updateOffer(e, o)} style={{ borderTop: "1px solid var(--border-color)", paddingTop: "0.6rem", display: "grid", gap: "0.4rem" }}>
+              <strong>{o.currency} {o.price.toFixed(2)}</strong><small>{o.id} · {o.productId} · {o.sellerId} · v{o.version}</small>
+              <input name="price" type="number" min="0" step="0.01" defaultValue={o.price} required style={field} aria-label={o.id + " offer price"} />
+              <input name="stockQuantity" type="number" min="0" step="1" defaultValue={o.stockQuantity ?? 0} required style={field} aria-label={o.id + " offer stock"} />
+              <button disabled={busy} style={button}>Save offer changes</button>
+            </form>
+          ))}</div>
         </div>
       </section>
       <section style={{ ...panel, marginTop: "1rem" }}>

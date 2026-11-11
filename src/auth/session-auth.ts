@@ -76,7 +76,7 @@ async function verifyPassword(password: string, encoded: string): Promise<boolea
   const p = Number(parts[3]);
   const saltHex = parts[4] ?? "";
   const hashHex = parts[5] ?? "";
-  if (![n, r, p].every(Number.isSafeInteger) || !/^[a-f0-9]{32}$/i.test(saltHex) ||
+  if (n !== SCRYPT_N || r !== SCRYPT_R || p !== SCRYPT_P || !/^[a-f0-9]{32}$/i.test(saltHex) ||
       !/^[a-f0-9]{128}$/i.test(hashHex)) return false;
   const expected = Buffer.from(hashHex, "hex");
   const actual = await deriveKey(password, Buffer.from(saltHex, "hex"), expected.length, {

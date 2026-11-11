@@ -1,0 +1,210 @@
+{
+    "artifactId":  "polyfind-baseline-comparison-v1",
+    "schemaVersion":  "1.0.0",
+    "generatedAt":  "2026-01-01T00:00:00.000Z",
+    "workload":  {
+                     "workloadId":  "wl-standard-bench-50",
+                     "datasetSize":  50,
+                     "totalOperations":  100,
+                     "updateRegime":  "medium",
+                     "queryMixSummary":  "40% keyword, 30% filtered, 20% semantic, 10% relationship"
+                 },
+    "environment":  {
+                        "platform":  "fixture",
+                        "architecture":  "fixture",
+                        "cpuModel":  "fixture",
+                        "cpuCores":  1,
+                        "totalMemoryMb":  1,
+                        "nodeVersion":  "fixture"
+                    },
+    "methods":  [
+                    {
+                        "methodId":  "baseline-mysql-only",
+                        "methodName":  "MySQL-Only Baseline",
+                        "isBaseline":  true,
+                        "relevance":  {
+                                          "ndcgAt10":  0.38,
+                                          "precisionAt10":  0.4
+                                      },
+                        "freshness":  {
+                                          "violationRate":  0,
+                                          "maxVisibilityDelayMs":  0
+                                      },
+                        "latency":  {
+                                        "medianP50Ms":  8.5,
+                                        "p95Ms":  18.4,
+                                        "meanMs":  9.8
+                                    },
+                        "resourceCost":  {
+                                             "storeDispatchesPerQuery":  1,
+                                             "mysqlOpsPerQuery":  1,
+                                             "redisOpsPerQuery":  0,
+                                             "vectorOpsPerQuery":  0,
+                                             "graphOpsPerQuery":  0
+                                         },
+                        "notes":  "Strict transactional correctness and zero staleness; poor relevance for semantic/associative search."
+                    },
+                    {
+                        "methodId":  "baseline-fixed-multistore",
+                        "methodName":  "Fixed MultiStore Baseline",
+                        "isBaseline":  true,
+                        "relevance":  {
+                                          "ndcgAt10":  0.86,
+                                          "precisionAt10":  0.85
+                                      },
+                        "freshness":  {
+                                          "violationRate":  0,
+                                          "maxVisibilityDelayMs":  0
+                                      },
+                        "latency":  {
+                                        "medianP50Ms":  9.2,
+                                        "p95Ms":  14.2,
+                                        "meanMs":  10.1
+                                    },
+                        "resourceCost":  {
+                                             "storeDispatchesPerQuery":  4,
+                                             "mysqlOpsPerQuery":  1,
+                                             "redisOpsPerQuery":  1,
+                                             "vectorOpsPerQuery":  1,
+                                             "graphOpsPerQuery":  1
+                                         },
+                        "notes":  "Unconditionally queries all 4 stores on every query; high relevance but excessive resource overhead."
+                    },
+                    {
+                        "methodId":  "baseline-ttl-cache",
+                        "methodName":  "TTL-Only Cache Baseline",
+                        "isBaseline":  true,
+                        "relevance":  {
+                                          "ndcgAt10":  0.85,
+                                          "precisionAt10":  0.84
+                                      },
+                        "freshness":  {
+                                          "violationRate":  18.5,
+                                          "maxVisibilityDelayMs":  60000
+                                      },
+                        "latency":  {
+                                        "medianP50Ms":  1.2,
+                                        "p95Ms":  1.8,
+                                        "meanMs":  1.5
+                                    },
+                        "resourceCost":  {
+                                             "storeDispatchesPerQuery":  0.45,
+                                             "mysqlOpsPerQuery":  0.15,
+                                             "redisOpsPerQuery":  1,
+                                             "vectorOpsPerQuery":  0.15,
+                                             "graphOpsPerQuery":  0.15
+                                         },
+                        "notes":  "Lowest latency and store overhead, but severe freshness regressions under active write workloads."
+                    },
+                    {
+                        "methodId":  "baseline-fixed-hybrid",
+                        "methodName":  "Fixed Hybrid Baseline",
+                        "isBaseline":  true,
+                        "relevance":  {
+                                          "ndcgAt10":  0.84,
+                                          "precisionAt10":  0.82
+                                      },
+                        "freshness":  {
+                                          "violationRate":  0,
+                                          "maxVisibilityDelayMs":  0
+                                      },
+                        "latency":  {
+                                        "medianP50Ms":  6.5,
+                                        "p95Ms":  9.6,
+                                        "meanMs":  7
+                                    },
+                        "resourceCost":  {
+                                             "storeDispatchesPerQuery":  2.5,
+                                             "mysqlOpsPerQuery":  1,
+                                             "redisOpsPerQuery":  0.5,
+                                             "vectorOpsPerQuery":  0.5,
+                                             "graphOpsPerQuery":  0.5
+                                         },
+                        "notes":  "Static query routing heuristic without dynamic cost feedback or cache invalidation signals."
+                    },
+                    {
+                        "methodId":  "polyfind-adaptive",
+                        "methodName":  "PolyFind Adaptive (Proposed)",
+                        "isBaseline":  false,
+                        "relevance":  {
+                                          "ndcgAt10":  0.88,
+                                          "precisionAt10":  0.88
+                                      },
+                        "freshness":  {
+                                          "violationRate":  0,
+                                          "maxVisibilityDelayMs":  0
+                                      },
+                        "latency":  {
+                                        "medianP50Ms":  2.4,
+                                        "p95Ms":  2.9,
+                                        "meanMs":  2.6
+                                    },
+                        "resourceCost":  {
+                                             "storeDispatchesPerQuery":  1.3,
+                                             "mysqlOpsPerQuery":  0.35,
+                                             "redisOpsPerQuery":  0.65,
+                                             "vectorOpsPerQuery":  0.2,
+                                             "graphOpsPerQuery":  0.1
+                                         },
+                        "notes":  "Adaptive planner checking version metadata; guarantees 0% staleness while retaining low latency."
+                    }
+                ],
+    "tradeoffsAndRegressions":  [
+                                    {
+                                        "claim":  "Freshness Verification Latency Overhead vs Unchecked TTL Cache",
+                                        "baselineMethodId":  "baseline-ttl-cache",
+                                        "baselineMethodName":  "TTL-Only Cache Baseline",
+                                        "comparedMethodId":  "polyfind-adaptive",
+                                        "comparedMethodName":  "PolyFind Adaptive (Proposed)",
+                                        "metricName":  "Latency p95",
+                                        "unit":  "ms",
+                                        "baselineValue":  1.8,
+                                        "comparedValue":  2.9,
+                                        "difference":  1.1,
+                                        "isRegression":  true,
+                                        "explanation":  "PolyFind incurs a 1.10 ms p95 latency penalty over blind TTL cache because it validates version metadata to prevent stale reads. This regression is a documented correctness trade-off."
+                                    },
+                                    {
+                                        "claim":  "Freshness Violation Elimination vs TTL Cache",
+                                        "baselineMethodId":  "baseline-ttl-cache",
+                                        "baselineMethodName":  "TTL-Only Cache Baseline",
+                                        "comparedMethodId":  "polyfind-adaptive",
+                                        "comparedMethodName":  "PolyFind Adaptive (Proposed)",
+                                        "metricName":  "Freshness Violation Rate",
+                                        "unit":  "%",
+                                        "baselineValue":  18.5,
+                                        "comparedValue":  0,
+                                        "difference":  -18.5,
+                                        "isRegression":  false,
+                                        "explanation":  "Under concurrent updates, TTL cache returns stale prices/stock 18.5% of the time. PolyFind achieves 0.0% staleness by checking entity version snapshots against MySQL."
+                                    },
+                                    {
+                                        "claim":  "Resource Dispatch Efficiency vs Fixed MultiStore",
+                                        "baselineMethodId":  "baseline-fixed-multistore",
+                                        "baselineMethodName":  "Fixed MultiStore Baseline",
+                                        "comparedMethodId":  "polyfind-adaptive",
+                                        "comparedMethodName":  "PolyFind Adaptive (Proposed)",
+                                        "metricName":  "Store Dispatches / Query",
+                                        "unit":  "ops/query",
+                                        "baselineValue":  4,
+                                        "comparedValue":  1.3,
+                                        "difference":  -2.7,
+                                        "isRegression":  false,
+                                        "explanation":  "Fixed MultiStore unconditionally queries all four engines. PolyFind\u0027s adaptive planner reduces store dispatches by 67.5% (from 4.0 to 1.3 ops/query) by routing selectively based on query intent and cached state."
+                                    },
+                                    {
+                                        "claim":  "Semantic Retrieval Relevance vs Relational MySQL-Only",
+                                        "baselineMethodId":  "baseline-mysql-only",
+                                        "baselineMethodName":  "MySQL-Only Baseline",
+                                        "comparedMethodId":  "polyfind-adaptive",
+                                        "comparedMethodName":  "PolyFind Adaptive (Proposed)",
+                                        "metricName":  "NDCG@10 Relevance",
+                                        "unit":  "score",
+                                        "baselineValue":  0.38,
+                                        "comparedValue":  0.88,
+                                        "difference":  0.5,
+                                        "isRegression":  false,
+                                        "explanation":  "MySQL exact-match and fulltext search performs poorly on natural language and conceptual queries (NDCG@10 = 0.38). Integrating vector and graph representations improves ranking quality to 0.88."
+                                    }
+                                ]
+}

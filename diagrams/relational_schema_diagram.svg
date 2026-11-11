@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#2563eb" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#d97706" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#7c3aed" />
+    </marker>
+
+    <style>
+      .title { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #0f172a; }
+      .subtitle { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; fill: #475569; }
+      .tbl-name { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #0f172a; letter-spacing: 0.5px; }
+      .cell-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; fill: #1e293b; text-anchor: middle; dominant-baseline: middle; }
+      .pk-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: bold; text-decoration: underline; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .fk-label { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; fill: #475569; }
+      
+      .table-box { fill: #f8fafc; stroke: #334155; stroke-width: 1.5; }
+      .cell-divider { stroke: #94a3b8; stroke-width: 1.2; }
+      .fk-line { fill: none; stroke: #0f172a; stroke-width: 1.8; }
+      .fk-line-blue { fill: none; stroke: #2563eb; stroke-width: 1.8; }
+      .fk-line-amber { fill: none; stroke: #d97706; stroke-width: 1.8; }
+      .fk-line-purple { fill: none; stroke: #7c3aed; stroke-width: 1.8; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#ffffff" />
+
+  <!-- Header -->
+  <text x="60" y="38" class="title">PolyFind: Relational Database Schema Diagram</text>
+  <text x="60" y="58" class="subtitle">Referential Integrity Constraints &amp; Foreign Key References (Elmasri &amp; Navathe, Chapter 5, Figure 5.7 Format)</text>
+
+  <!-- ==================== TABLE 1: CATEGORIES ==================== -->
+  <g transform="translate(60, 95)">
+    <text x="0" y="-10" class="tbl-name">CATEGORIES</text>
+    <rect x="0" y="0" width="710" height="36" class="table-box" />
+    
+    <!-- Cells: id (100), name (140), description (170), created_at (150), updated_at (150) -->
+    <line x1="100" y1="0" x2="100" y2="36" class="cell-divider" />
+    <line x1="240" y1="0" x2="240" y2="36" class="cell-divider" />
+    <line x1="410" y1="0" x2="410" y2="36" class="cell-divider" />
+    <line x1="560" y1="0" x2="560" y2="36" class="cell-divider" />
+
+    <!-- Labels -->
+    <text x="50" y="19" class="pk-text">id</text>
+    <text x="170" y="19" class="cell-text">name</text>
+    <text x="325" y="19" class="cell-text">description</text>
+    <text x="485" y="19" class="cell-text">created_at</text>
+    <text x="635" y="19" class="cell-text">updated_at</text>
+  </g>
+
+
+  <!-- ==================== TABLE 2: PRODUCTS ==================== -->
+  <g transform="translate(60, 220)">
+    <text x="0" y="-10" class="tbl-name">PRODUCTS</text>
+    <rect x="0" y="0" width="1040" height="36" class="table-box" />
+
+    <!-- Cells: id (90), name (130), description (140), category_id (120), price (90), stock (80), version (90), created_at (150), updated_at (150) -->
+    <line x1="90" y1="0" x2="90" y2="36" class="cell-divider" />
+    <line x1="220" y1="0" x2="220" y2="36" class="cell-divider" />
+    <line x1="360" y1="0" x2="360" y2="36" class="cell-divider" />
+    <line x1="480" y1="0" x2="480" y2="36" class="cell-divider" />
+    <line x1="570" y1="0" x2="570" y2="36" class="cell-divider" />
+    <line x1="650" y1="0" x2="650" y2="36" class="cell-divider" />
+    <line x1="740" y1="0" x2="740" y2="36" class="cell-divider" />
+    <line x1="890" y1="0" x2="890" y2="36" class="cell-divider" />
+
+    <!-- Labels -->
+    <text x="45" y="19" class="pk-text">id</text>
+    <text x="155" y="19" class="cell-text">name</text>
+    <text x="290" y="19" class="cell-text">description</text>
+    <text x="420" y="19" class="cell-text" style="font-weight: 600; fill: #2563eb;">category_id</text>
+    <text x="525" y="19" class="cell-text">price</text>
+    <text x="610" y="19" class="cell-text">stock</text>
+    <text x="695" y="19" class="cell-text">version</text>
+    <text x="815" y="19" class="cell-text">created_at</text>
+    <text x="965" y="19" class="cell-text">updated_at</text>
+  </g>
+
+
+  <!-- ==================== TABLE 3: PRODUCT_VERSIONS ==================== -->
+  <g transform="translate(60, 355)">
+    <text x="0" y="-10" class="tbl-name">PRODUCT_VERSIONS</text>
+    <rect x="0" y="0" width="860" height="36" class="table-box" />
+
+    <!-- Cells: id (80), product_id (120), version (90), price (90), stock (80), change_reason (240), recorded_at (160) -->
+    <line x1="80" y1="0" x2="80" y2="36" class="cell-divider" />
+    <line x1="200" y1="0" x2="200" y2="36" class="cell-divider" />
+    <line x1="290" y1="0" x2="290" y2="36" class="cell-divider" />
+    <line x1="380" y1="0" x2="380" y2="36" class="cell-divider" />
+    <line x1="460" y1="0" x2="460" y2="36" class="cell-divider" />
+    <line x1="700" y1="0" x2="700" y2="36" class="cell-divider" />
+
+    <!-- Labels -->
+    <text x="40" y="19" class="pk-text">id</text>
+    <text x="140" y="19" class="cell-text" style="font-weight: 600; fill: #d97706;">product_id</text>
+    <text x="245" y="19" class="cell-text">version</text>
+    <text x="335" y="19" class="cell-text">price</text>
+    <text x="420" y="19" class="cell-text">stock</text>
+    <text x="580" y="19" class="cell-text">change_reason</text>
+    <text x="780" y="19" class="cell-text">recorded_at</text>
+  </g>
+
+
+  <!-- ==================== TABLE 4: PRODUCT_RELATIONS ==================== -->
+  <g transform="translate(60, 490)">
+    <text x="0" y="-10" class="tbl-name">PRODUCT_RELATIONS (Derived M:N Graph Association)</text>
+    <rect x="0" y="0" width="800" height="36" class="table-box" />
+
+    <!-- Cells: source_product_id (170), target_product_id (170), relation_type (150), similarity_score (160), updated_at (150) -->
+    <line x1="170" y1="0" x2="170" y2="36" class="cell-divider" />
+    <line x1="340" y1="0" x2="340" y2="36" class="cell-divider" />
+    <line x1="490" y1="0" x2="490" y2="36" class="cell-divider" />
+    <line x1="650" y1="0" x2="650" y2="36" class="cell-divider" />
+
+    <!-- Labels -->
+    <text x="85" y="19" class="pk-text" style="fill: #7c3aed;">source_product_id</text>
+    <text x="255" y="19" class="pk-text" style="fill: #7c3aed;">target_product_id</text>
+    <text x="415" y="19" class="cell-text">relation_type</text>
+    <text x="570" y="19" class="cell-text">similarity_score</text>
+    <text x="725" y="19" class="cell-text">updated_at</text>
+  </g>
+
+
+  <!-- ==================== REFERENTIAL INTEGRITY ARROWS ==================== -->
+
+  <!-- 1. PRODUCTS.category_id -> CATEGORIES.id -->
+  <!-- category_id center: 60 + 420 = 480, bottom y = 256 -->
+  <!-- CATEGORIES.id center: 60 + 50 = 110, bottom y = 131 -->
+  <path d="M 480,256 L 480,285 L 30,285 L 30,155 L 110,155 L 110,135" class="fk-line-blue" marker-end="url(#arrow-blue)" />
+  <text x="220" y="278" class="fk-label" style="fill: #2563eb;">fk_products_category (RESTRICT)</text>
+
+  <!-- 2. PRODUCT_VERSIONS.product_id -> PRODUCTS.id -->
+  <!-- product_id center: 60 + 140 = 200, bottom y = 391 -->
+  <!-- PRODUCTS.id center: 60 + 45 = 105, bottom y = 256 -->
+  <path d="M 200,391 L 200,420 L 45,420 L 45,275 L 95,275 L 95,260" class="fk-line-amber" marker-end="url(#arrow-amber)" />
+  <text x="70" y="413" class="fk-label" style="fill: #d97706;">fk_product_versions_product (CASCADE)</text>
+
+  <!-- 3. PRODUCT_RELATIONS.source_product_id -> PRODUCTS.id -->
+  <!-- source_product_id center: 60 + 85 = 145, bottom y = 526 -->
+  <path d="M 145,526 L 145,565 L 18,565 L 18,260 L 80,260" class="fk-line-purple" marker-end="url(#arrow-purple)" />
+
+  <!-- 4. PRODUCT_RELATIONS.target_product_id -> PRODUCTS.id -->
+  <!-- target_product_id center: 60 + 255 = 315, bottom y = 526 -->
+  <path d="M 315,526 L 315,580 L 10,580 L 10,250 L 70,250 L 70,260" class="fk-line-purple" marker-end="url(#arrow-purple)" />
+  <text x="120" y="574" class="fk-label" style="fill: #7c3aed;">fk_product_relations_product (CASCADE)</text>
+
+
+  <!-- ==================== FOOTER NOTES ==================== -->
+  <g transform="translate(60, 615)">
+    <text x="0" y="0" style="font-family:'Segoe UI', sans-serif; font-size:12px; font-weight:bold; fill:#334155;">Key Referential Integrity Rules:</text>
+    <text x="0" y="18" style="font-family:'Segoe UI', sans-serif; font-size:11px; fill:#475569;">1. <tspan style="text-decoration:underline; font-weight:bold;">Underlined</tspan> attributes denote Primary Keys (PK). Composite PKs consist of all underlined attributes in that relation.</text>
+    <text x="0" y="34" style="font-family:'Segoe UI', sans-serif; font-size:11px; fill:#475569;">2. Directed arrows indicate Foreign Key (FK) integrity constraints: FK values must exist in the referenced PK column or be NULL.</text>
+  </g>
+</svg>

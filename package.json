@@ -1,0 +1,36 @@
+{
+  "name": "polyfind",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PolyFind contract and architecture baseline",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx scripts/dev.ts",
+    "build": "next build web",
+    "start": "tsx scripts/start.ts",
+    "test": "tsx --test --test-concurrency=1",
+    "test:research": "npm test",
+    "typecheck": "tsc --noEmit",
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit",
+    "check:production": "npm run typecheck && npm run typecheck:scripts && npm run build",
+    "migrate": "tsx scripts/migrate.ts",
+    "seed": "tsx scripts/seed-catalog.ts",
+    "api": "tsx scripts/api.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@lancedb/lancedb": "^0.41.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "mysql2": "^3.24.6",
+    "neo4j-driver": "^6.3.0",
+    "next": "16.4.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "redis": "^5.12.1"
+  }
+}

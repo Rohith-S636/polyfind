@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 940" width="1280" height="940">
+  <defs>
+    <style>
+      .title { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #0f172a; }
+      .subtitle { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; fill: #475569; }
+      .entity-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .rel-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: bold; fill: #1e293b; text-anchor: middle; dominant-baseline: middle; }
+      .attr-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; fill: #1e293b; text-anchor: middle; dominant-baseline: middle; }
+      .key-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; font-weight: bold; text-decoration: underline; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .partial-key-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #92400e; text-anchor: middle; dominant-baseline: middle; }
+      .card-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #b91c1c; text-anchor: middle; dominant-baseline: middle; }
+      .role-text { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 600; fill: #4338ca; text-anchor: middle; }
+      .legend-title { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: bold; fill: #0f172a; }
+      .legend-label { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 11px; fill: #334155; dominant-baseline: middle; }
+      
+      .entity-rect { fill: #f8fafc; stroke: #0f172a; stroke-width: 2; }
+      .weak-outer { fill: #fefce8; stroke: #854d0e; stroke-width: 2; }
+      .weak-inner { fill: none; stroke: #854d0e; stroke-width: 1.5; }
+      
+      .rel-diamond { fill: #f1f5f9; stroke: #0f172a; stroke-width: 2; }
+      .ident-rel-outer { fill: #fff7ed; stroke: #c2410c; stroke-width: 2; }
+      .ident-rel-inner { fill: none; stroke: #c2410c; stroke-width: 1.5; }
+      
+      .attr-oval { fill: #ffffff; stroke: #334155; stroke-width: 1.5; }
+      .multi-outer { fill: #ffffff; stroke: #0369a1; stroke-width: 1.5; }
+      .multi-inner { fill: none; stroke: #0369a1; stroke-width: 1.5; }
+      .derived-oval { fill: #ffffff; stroke: #475569; stroke-width: 1.5; stroke-dasharray: 4,3; }
+      
+      .conn-line { stroke: #334155; stroke-width: 1.5; }
+      .double-line1 { stroke: #0f172a; stroke-width: 3.5; }
+      .double-line2 { stroke: #ffffff; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#ffffff" />
+  
+  <!-- Header -->
+  <text x="40" y="38" class="title">PolyFind: Conceptual Entity-Relationship (ER) Diagram</text>
+  <text x="40" y="58" class="subtitle">Textbook Chen Notation (Elmasri &amp; Navathe, Chapter 3) — Authoritative MySQL 8.0 Catalog &amp; Version History Model</text>
+
+  <!-- ==================== CONNECTIONS ==================== -->
+  
+  <!-- Category Attributes Lines -->
+  <line x1="600" y1="140" x2="430" y2="90" class="conn-line" /> <!-- id -->
+  <line x1="600" y1="140" x2="600" y2="75" class="conn-line" /> <!-- name -->
+  <line x1="600" y1="140" x2="770" y2="90" class="conn-line" /> <!-- description -->
+  <line x1="600" y1="140" x2="390" y2="140" class="conn-line" /> <!-- product_count -->
+  <line x1="600" y1="140" x2="810" y2="140" class="conn-line" /> <!-- timestamps -->
+  <line x1="810" y1="140" x2="940" y2="115" class="conn-line" /> <!-- created_at -->
+  <line x1="810" y1="140" x2="940" y2="165" class="conn-line" /> <!-- updated_at -->
+
+  <!-- CATEGORY to CLASSIFIED_AS (1 side) -->
+  <line x1="600" y1="165" x2="600" y2="245" class="conn-line" />
+  <text x="585" y="200" class="card-text">1</text>
+
+  <!-- CLASSIFIED_AS to PRODUCT (N side, Total Participation: Double Line) -->
+  <line x1="600" y1="315" x2="600" y2="395" class="double-line1" />
+  <line x1="600" y1="315" x2="600" y2="395" class="double-line2" />
+  <text x="585" y="360" class="card-text">N</text>
+
+  <!-- Product Attributes Lines (Left Side) -->
+  <line x1="600" y1="420" x2="380" y2="320" class="conn-line" /> <!-- id -->
+  <line x1="600" y1="420" x2="340" y2="370" class="conn-line" /> <!-- name -->
+  <line x1="600" y1="420" x2="330" y2="420" class="conn-line" /> <!-- description -->
+  <line x1="600" y1="420" x2="340" y2="470" class="conn-line" /> <!-- price -->
+  <line x1="600" y1="420" x2="380" y2="520" class="conn-line" /> <!-- stock -->
+  <line x1="600" y1="420" x2="460" y2="520" class="conn-line" /> <!-- version -->
+  
+  <line x1="600" y1="420" x2="200" y2="340" class="conn-line" /> <!-- vector_embedding -->
+  <line x1="600" y1="420" x2="190" y2="420" class="conn-line" /> <!-- search_keywords -->
+  <line x1="600" y1="420" x2="200" y2="490" class="conn-line" /> <!-- inventory_value -->
+
+  <!-- Product Timestamps (Right) -->
+  <line x1="600" y1="420" x2="790" y2="370" class="conn-line" /> <!-- timestamps -->
+  <line x1="790" y1="370" x2="910" y2="340" class="conn-line" /> <!-- created_at -->
+  <line x1="790" y1="370" x2="910" y2="400" class="conn-line" /> <!-- updated_at -->
+
+  <!-- Recursive Relationship RELATED_TO on PRODUCT -->
+  <!-- Top loop (Source role) -->
+  <path d="M 670,400 C 780,350 820,445 885,465" fill="none" class="conn-line" />
+  <text x="760" y="420" class="role-text">Source</text>
+  <text x="860" y="455" class="card-text">M</text>
+
+  <!-- Bottom loop (Target role) -->
+  <path d="M 670,440 C 780,510 820,490 885,475" fill="none" class="conn-line" />
+  <text x="760" y="495" class="role-text">Target</text>
+  <text x="860" y="495" class="card-text">N</text>
+
+  <!-- Attributes on RELATED_TO -->
+  <line x1="950" y1="470" x2="1080" y2="440" class="conn-line" /> <!-- similarity_score -->
+  <line x1="950" y1="470" x2="1080" y2="500" class="conn-line" /> <!-- relation_type -->
+
+  <!-- PRODUCT to HAS_VERSION (Identifying Relationship, 1 side) -->
+  <line x1="600" y1="445" x2="600" y2="550" class="conn-line" />
+  <text x="585" y="490" class="card-text">1</text>
+
+  <!-- HAS_VERSION to PRODUCT_VERSION (Weak Entity, N side, Total Participation: Double Line) -->
+  <line x1="600" y1="620" x2="600" y2="705" class="double-line1" />
+  <line x1="600" y1="620" x2="600" y2="705" class="double-line2" />
+  <text x="585" y="665" class="card-text">N</text>
+
+  <!-- Product Version Attributes Lines -->
+  <line x1="600" y1="730" x2="370" y2="800" class="conn-line" /> <!-- version (partial key) -->
+  <line x1="600" y1="730" x2="500" y2="825" class="conn-line" /> <!-- price_snapshot -->
+  <line x1="600" y1="730" x2="640" y2="825" class="conn-line" /> <!-- stock_snapshot -->
+  <line x1="600" y1="730" x2="770" y2="800" class="conn-line" /> <!-- change_reason -->
+  <line x1="600" y1="730" x2="820" y2="730" class="conn-line" /> <!-- recorded_at -->
+
+
+  <!-- ==================== ENTITIES & RELATIONSHIPS ==================== -->
+
+  <!-- 1. CATEGORY ENTITY (Strong Entity) -->
+  <rect x="520" y="115" width="160" height="50" rx="3" class="entity-rect" />
+  <text x="600" y="140" class="entity-text">CATEGORY</text>
+
+  <!-- Category Attributes -->
+  <!-- id (PK) -->
+  <ellipse cx="430" cy="90" rx="55" ry="24" class="attr-oval" />
+  <text x="430" y="90" class="key-text">id</text>
+
+  <!-- name -->
+  <ellipse cx="600" cy="75" rx="50" ry="22" class="attr-oval" />
+  <text x="600" y="75" class="attr-text">name</text>
+
+  <!-- description -->
+  <ellipse cx="770" cy="90" rx="58" ry="22" class="attr-oval" />
+  <text x="770" y="90" class="attr-text">description</text>
+
+  <!-- product_count (Derived Attribute) -->
+  <ellipse cx="390" cy="140" rx="65" ry="24" class="derived-oval" />
+  <text x="390" y="140" class="attr-text">product_count</text>
+
+  <!-- timestamps (Composite) -->
+  <ellipse cx="810" cy="140" rx="58" ry="22" class="attr-oval" />
+  <text x="810" y="140" class="attr-text">timestamps</text>
+  <ellipse cx="940" cy="115" rx="52" ry="20" class="attr-oval" />
+  <text x="940" y="115" class="attr-text">created_at</text>
+  <ellipse cx="940" cy="165" rx="52" ry="20" class="attr-oval" />
+  <text x="940" y="165" class="attr-text">updated_at</text>
+
+
+  <!-- 2. CLASSIFIED_AS (Relationship) -->
+  <polygon points="600,245 680,280 600,315 520,280" class="rel-diamond" />
+  <text x="600" y="280" class="rel-text">CLASSIFIED_AS</text>
+
+
+  <!-- 3. PRODUCT ENTITY (Strong Entity) -->
+  <rect x="520" y="395" width="160" height="50" rx="3" class="entity-rect" />
+  <text x="600" y="420" class="entity-text">PRODUCT</text>
+
+  <!-- Product Attributes -->
+  <!-- id (PK) -->
+  <ellipse cx="380" cy="320" rx="55" ry="24" class="attr-oval" />
+  <text x="380" y="320" class="key-text">id</text>
+
+  <!-- name -->
+  <ellipse cx="340" cy="370" rx="50" ry="22" class="attr-oval" />
+  <text x="340" y="370" class="attr-text">name</text>
+
+  <!-- description -->
+  <ellipse cx="330" cy="420" rx="55" ry="22" class="attr-oval" />
+  <text x="330" y="420" class="attr-text">description</text>
+
+  <!-- price -->
+  <ellipse cx="340" cy="470" rx="48" ry="22" class="attr-oval" />
+  <text x="340" y="470" class="attr-text">price</text>
+
+  <!-- stock -->
+  <ellipse cx="380" cy="520" rx="48" ry="22" class="attr-oval" />
+  <text x="380" y="520" class="attr-text">stock</text>
+
+  <!-- version -->
+  <ellipse cx="460" cy="520" rx="45" ry="22" class="attr-oval" />
+  <text x="460" y="520" class="attr-text">version</text>
+
+  <!-- vector_embedding (Multivalued: Double Oval) -->
+  <ellipse cx="200" cy="340" rx="68" ry="26" class="multi-outer" />
+  <ellipse cx="200" cy="340" rx="62" ry="21" class="multi-inner" />
+  <text x="200" y="340" class="attr-text">vector_embedding</text>
+
+  <!-- search_keywords (Multivalued: Double Oval) -->
+  <ellipse cx="190" cy="420" rx="68" ry="26" class="multi-outer" />
+  <ellipse cx="190" cy="420" rx="62" ry="21" class="multi-inner" />
+  <text x="190" y="420" class="attr-text">search_keywords</text>
+
+  <!-- inventory_value (Derived Attribute: Dashed Oval) -->
+  <ellipse cx="200" cy="490" rx="68" ry="25" class="derived-oval" />
+  <text x="200" y="490" class="attr-text">inventory_value</text>
+
+  <!-- timestamps (Composite) -->
+  <ellipse cx="790" cy="370" rx="58" ry="22" class="attr-oval" />
+  <text x="790" y="370" class="attr-text">timestamps</text>
+  <ellipse cx="910" cy="340" rx="52" ry="20" class="attr-oval" />
+  <text x="910" y="340" class="attr-text">created_at</text>
+  <ellipse cx="910" cy="400" rx="52" ry="20" class="attr-oval" />
+  <text x="910" y="400" class="attr-text">updated_at</text>
+
+
+  <!-- 4. RELATED_TO (Recursive M:N Relationship) -->
+  <polygon points="950,435 1020,470 950,505 880,470" class="rel-diamond" />
+  <text x="950" y="470" class="rel-text">RELATED_TO</text>
+
+  <!-- Attributes on RELATED_TO -->
+  <ellipse cx="1080" cy="440" rx="65" ry="22" class="attr-oval" />
+  <text x="1080" y="440" class="attr-text">similarity_score</text>
+
+  <ellipse cx="1080" cy="500" rx="62" ry="22" class="attr-oval" />
+  <text x="1080" y="500" class="attr-text">relation_type</text>
+
+
+  <!-- 5. HAS_VERSION (Identifying Relationship: Double Diamond) -->
+  <polygon points="600,550 675,585 600,620 525,585" class="ident-rel-outer" />
+  <polygon points="600,555 667,585 600,615 533,585" class="ident-rel-inner" />
+  <text x="600" y="585" class="rel-text" style="fill: #9a3412;">HAS_VERSION</text>
+
+
+  <!-- 6. PRODUCT_VERSION (Weak Entity: Double Rectangle) -->
+  <rect x="500" y="705" width="200" height="52" rx="3" class="weak-outer" />
+  <rect x="505" y="710" width="190" height="42" rx="2" class="weak-inner" />
+  <text x="600" y="731" class="entity-text" style="fill: #78350f;">PRODUCT_VERSION</text>
+
+  <!-- Product Version Attributes -->
+  <!-- version (Partial Key / Discriminator: Dashed underline) -->
+  <ellipse cx="370" cy="800" rx="55" ry="24" class="attr-oval" />
+  <text x="370" y="798" class="partial-key-text">version</text>
+  <line x1="345" y1="808" x2="395" y2="808" stroke="#92400e" stroke-width="1.5" stroke-dasharray="3,2" />
+
+  <!-- price_snapshot -->
+  <ellipse cx="500" cy="825" rx="62" ry="22" class="attr-oval" />
+  <text x="500" y="825" class="attr-text">price_snapshot</text>
+
+  <!-- stock_snapshot -->
+  <ellipse cx="640" cy="825" rx="62" ry="22" class="attr-oval" />
+  <text x="640" y="825" class="attr-text">stock_snapshot</text>
+
+  <!-- change_reason -->
+  <ellipse cx="770" cy="800" rx="62" ry="22" class="attr-oval" />
+  <text x="770" y="800" class="attr-text">change_reason</text>
+
+  <!-- recorded_at -->
+  <ellipse cx="820" cy="730" rx="55" ry="22" class="attr-oval" />
+  <text x="820" y="730" class="attr-text">recorded_at</text>
+
+
+  <!-- ==================== NOTATION LEGEND ==================== -->
+  <g transform="translate(40, 860)">
+    <rect x="0" y="0" width="1200" height="65" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+    <text x="15" y="22" class="legend-title">Chen Notation Guide (Elmasri &amp; Navathe Standards):</text>
+    
+    <!-- Legend Items -->
+    <!-- Regular Entity -->
+    <rect x="15" y="32" width="40" height="20" rx="2" class="entity-rect" />
+    <text x="62" y="44" class="legend-label">Strong Entity</text>
+
+    <!-- Weak Entity -->
+    <rect x="145" y="32" width="40" height="20" rx="2" class="weak-outer" />
+    <rect x="148" y="34" width="34" height="16" rx="1" class="weak-inner" />
+    <text x="192" y="44" class="legend-label">Weak Entity</text>
+
+    <!-- Relationship -->
+    <polygon points="275,32 295,42 275,52 255,42" class="rel-diamond" />
+    <text x="303" y="44" class="legend-label">Relationship</text>
+
+    <!-- Identifying Relationship -->
+    <polygon points="390,32 410,42 390,52 370,42" class="ident-rel-outer" />
+    <polygon points="390,35 405,42 390,49 375,42" class="ident-rel-inner" />
+    <text x="418" y="44" class="legend-label">Identifying Rel.</text>
+
+    <!-- Key Attribute -->
+    <ellipse cx="525" cy="42" rx="18" ry="11" class="attr-oval" />
+    <text x="525" y="42" style="font-size:9px; text-decoration: underline; font-weight:bold; fill:#0f172a; text-anchor:middle; dominant-baseline:middle;">PK</text>
+    <text x="550" y="44" class="legend-label">Primary Key</text>
+
+    <!-- Partial Key -->
+    <ellipse cx="635" cy="42" rx="18" ry="11" class="attr-oval" />
+    <text x="635" y="41" style="font-size:9px; font-weight:bold; fill:#92400e; text-anchor:middle; dominant-baseline:middle;">PK*</text>
+    <line x1="626" y1="47" x2="644" y2="47" stroke="#92400e" stroke-width="1" stroke-dasharray="2,1" />
+    <text x="660" y="44" class="legend-label">Partial Key</text>
+
+    <!-- Multivalued -->
+    <ellipse cx="740" cy="42" rx="18" ry="11" class="multi-outer" />
+    <ellipse cx="740" cy="42" rx="14" ry="8" class="multi-inner" />
+    <text x="765" y="44" class="legend-label">Multivalued</text>
+
+    <!-- Derived -->
+    <ellipse cx="850" cy="42" rx="18" ry="11" class="derived-oval" />
+    <text x="875" y="44" class="legend-label">Derived</text>
+
+    <!-- Double Line -->
+    <line x1="935" y1="42" x2="975" y2="42" class="double-line1" />
+    <line x1="935" y1="42" x2="975" y2="42" class="double-line2" />
+    <text x="985" y="44" class="legend-label">Total Participation (Double Line)</text>
+
+    <!-- Single Line -->
+    <line x1="1120" y1="42" x2="1150" y2="42" class="conn-line" />
+    <text x="1158" y="44" class="legend-label">Partial</text>
+  </g>
+</svg>

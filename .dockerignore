@@ -1,0 +1,8 @@
+node_modules
+.next
+web/.next
+.env
+.git
+coverage
+results
+data

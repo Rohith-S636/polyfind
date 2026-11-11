@@ -85,7 +85,7 @@ if (vector.getSemanticProvider() && vectorEmbedder) {
   let page = 1;
   let ingested = 0;
   while (true) {
-    const batch = await catalog.listProducts({ page, limit: pageSize });
+    const batch = await catalog.listProducts({}, page, pageSize);
     if (batch.items.length === 0) break;
     const result = await ingestion.ingestBatch(batch.items);
     ingested += result.totalIngested;

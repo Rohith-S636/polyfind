@@ -23,8 +23,7 @@ async function main(): Promise<void> {
       "CREATE DATABASE IF NOT EXISTS `polyfind_integration_test` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
     );
     await connection.query(
-      "GRANT ALL PRIVILEGES ON `polyfind_integration_test`.* TO ?@'%'",
-      [appUser],
+      `GRANT ALL PRIVILEGES ON \`polyfind_integration_test\`.* TO '${appUser}'@'%'`,
     );
     await connection.query("FLUSH PRIVILEGES");
     process.stdout.write("Prepared isolated disposable MySQL integration database.\n");

@@ -41,7 +41,7 @@ A defensible benchmark must include the exact commit, environment snapshot, seed
 - The relevance qrels are provisional until independently reviewed.
 - Default fusion weights are not optimized.
 - Login throttling is process-local; horizontally scaled production requires a shared limiter.
-- Browser authentication uses HttpOnly, SameSite cookies, but deployment still needs a tested Origin/CSRF policy and secure configuration.
+- Browser authentication uses an HttpOnly, SameSite=Strict cookie (Secure in production); deployment still needs a verified allowed-Origin/CSRF policy and secure HTTPS configuration.
 - Public hosting is not certified until the deployed SHA and all database dependencies are smoke-tested.
 - The current benchmark fixture is not evidence of production latency or search-quality superiority.
 

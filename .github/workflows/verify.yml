@@ -8,6 +8,23 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: polyfind_test
+          MYSQL_USER: polyfind_test
+          MYSQL_PASSWORD: polyfind_test_password
+          MYSQL_ROOT_PASSWORD: polyfind_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ppolyfind_root_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      TEST_DATABASE_URL: mysql://polyfind_test:polyfind_test_password@127.0.0.1:3306/polyfind_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

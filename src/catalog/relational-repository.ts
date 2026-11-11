@@ -82,7 +82,11 @@ export interface ListPriceHistoryOptions {
 
 export interface RelationalStore {
   createBrand(input: BrandInput): Promise<void>;
+  getBrand(id: string): Promise<BrandInput | null>;
+  listBrands(): Promise<BrandInput[]>;
   createProductVariant(input: ProductVariantInput): Promise<void>;
+  getProductVariant(id: string): Promise<ProductVariantInput | null>;
+  listProductVariants(productId: string): Promise<ProductVariantInput[]>;
   createSeller(input: SellerInput): Promise<Seller>;
   getSeller(id: string): Promise<Seller | null>;
   listSellers(options?: ListSellersOptions): Promise<{ items: Seller[]; page: number; limit: number; total: number }>;
@@ -388,6 +392,37 @@ export class RelationalRepository implements RelationalStore {
     }
   }
 
+  async getBrand(id: string): Promise<BrandInput | null> {
+    const brandId = validateId(id, "Brand ID");
+    try {
+      const [rows] = await this.pool.query<RowDataPacket[]>(
+        "SELECT id, name, slug, description FROM brands WHERE id = ? OR slug = ?",
+        [brandId, brandId],
+      );
+      const row = rows[0];
+      return row ? {
+        id: String(row["id"]), name: String(row["name"]), slug: String(row["slug"]),
+        description: row["description"] === null ? null : String(row["description"]),
+      } : null;
+    } catch (error) {
+      throw new SafeDatabaseError(error);
+    }
+  }
+
+  async listBrands(): Promise<BrandInput[]> {
+    try {
+      const [rows] = await this.pool.query<RowDataPacket[]>(
+        "SELECT id, name, slug, description FROM brands ORDER BY name ASC, id ASC",
+      );
+      return rows.map((row) => ({
+        id: String(row["id"]), name: String(row["name"]), slug: String(row["slug"]),
+        description: row["description"] === null ? null : String(row["description"]),
+      }));
+    } catch (error) {
+      throw new SafeDatabaseError(error);
+    }
+  }
+
   async createSeller(input: SellerInput): Promise<Seller> {
     const id = validateId(input.id, "Seller ID");
     const name = validateId(input.name, "Seller name");
@@ -471,6 +506,16 @@ export class RelationalRepository implements RelationalStore {
     }
   }
 
+  async getBrand(id: string): Promise<BrandInput | null> {
+    const key = id.trim();
+    const brand = this.brands.get(key) ?? Array.from(this.brands.values()).find((item) => item.slug === key);
+    return brand ? { ...brand } : null;
+  }
+
+  async listBrands(): Promise<BrandInput[]> {
+    return Array.from(this.brands.values()).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)).map((brand) => ({ ...brand }));
+  }
+
   async createProductVariant(input: ProductVariantInput): Promise<void> {
     const id = validateId(input.id, "Variant ID");
     const productId = validateId(input.productId, "Product ID");
@@ -500,6 +545,48 @@ export class RelationalRepository implements RelationalStore {
       throw new SafeDatabaseError(error);
     } finally {
       connection.release();
+    }
+  }
+
+  async getProductVariant(id: string): Promise<ProductVariantInput | null> {
+    const variantId = validateId(id, "Variant ID");
+    try {
+      const [rows] = await this.pool.query<RowDataPacket[]>(
+        "SELECT id, product_id, sku, variant_key, attributes FROM product_variants WHERE id = ?",
+        [variantId],
+      );
+      const row = rows[0];
+      if (!row) return null;
+      const rawAttributes = row["attributes"];
+      return {
+        id: String(row["id"]), productId: String(row["product_id"]),
+        sku: row["sku"] === null ? null : String(row["sku"]),
+        variantKey: String(row["variant_key"]),
+        attributes: typeof rawAttributes === "string" ? JSON.parse(rawAttributes) as Record<string, string> : rawAttributes as Record<string, string>,
+      };
+    } catch (error) {
+      throw new SafeDatabaseError(error);
+    }
+  }
+
+  async listProductVariants(productId: string): Promise<ProductVariantInput[]> {
+    const id = validateId(productId, "Product ID");
+    try {
+      const [rows] = await this.pool.query<RowDataPacket[]>(
+        "SELECT id, product_id, sku, variant_key, attributes FROM product_variants WHERE product_id = ? AND status = 'active' ORDER BY variant_key ASC, id ASC",
+        [id],
+      );
+      return rows.map((row) => {
+        const rawAttributes = row["attributes"];
+        return {
+          id: String(row["id"]), productId: String(row["product_id"]),
+          sku: row["sku"] === null ? null : String(row["sku"]),
+          variantKey: String(row["variant_key"]),
+          attributes: typeof rawAttributes === "string" ? JSON.parse(rawAttributes) as Record<string, string> : rawAttributes as Record<string, string>,
+        };
+      });
+    } catch (error) {
+      throw new SafeDatabaseError(error);
     }
   }
 
@@ -1043,6 +1130,18 @@ export class InMemoryRelationalStore implements RelationalStore {
     const seller: Seller = { id, name, slug, status, createdAt: now, updatedAt: now };
     this.sellers.set(id, seller);
     return { ...seller };
+  }
+
+  async getProductVariant(id: string): Promise<ProductVariantInput | null> {
+    const variant = this.variants.get(id.trim());
+    return variant ? { ...variant, attributes: { ...variant.attributes } } : null;
+  }
+
+  async listProductVariants(productId: string): Promise<ProductVariantInput[]> {
+    return Array.from(this.variants.values())
+      .filter((variant) => variant.productId === productId.trim())
+      .sort((a, b) => a.variantKey.localeCompare(b.variantKey) || a.id.localeCompare(b.id))
+      .map((variant) => ({ ...variant, attributes: { ...variant.attributes } }));
   }
 
   async getOffer(id: string): Promise<Offer | null> {

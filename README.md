@@ -2,7 +2,7 @@
 
 PolyFind is an academic product-discovery application and DBMS capstone. It demonstrates a MySQL-authoritative catalogue with Redis caching, Neo4j relationship retrieval, LanceDB vector similarity, freshness validation, seller offers, price history, and administrator-controlled catalogue management.
 
-> **Project status:** active academic implementation. The repository contains a working application foundation and database adapters; deployment, external-service integration, and performance claims must be judged from the latest CI evidence rather than older README screenshots or reports.
+> **Project status:** active academic implementation. The repository has passing disposable MySQL, Redis, Neo4j, and LanceDB integration coverage and a repeated live multi-store CI benchmark. Use the latest GitHub Actions run and attached artifact as the current evidence; public deployment and independent relevance-judgment review are not certified.
 
 ## Approved architecture
 
@@ -42,8 +42,8 @@ The current default weighted reciprocal-rank contributions are MySQL 0.50, vecto
 git clone https://github.com/Rohith-S636/polyfind.git
 cd polyfind
 npm ci
-# npm install is also supported for a clean dependency resolution
-npm install
+# Alternative for local dependency resolution (do not run both):
+# npm install
 npm run typecheck
 npm run typecheck:scripts
 npm test
@@ -101,7 +101,7 @@ The frontend is served at `http://localhost:3000`; the API is normally at `http:
 - Customers can register at `/register`; customer accounts cannot mutate the shared catalogue.
 - Administrators can use `/admin` to add products, brands, sellers, variants, and offers, and inspect offer history.
 
-The browser currently holds the bearer session token in session-scoped storage. Treat this as a prototype security limitation; production-grade browser authentication should use an HttpOnly, Secure, SameSite cookie with CSRF protection before exposing the app to untrusted traffic.
+Browser sessions use an HttpOnly, SameSite=Strict cookie; the API adds Secure in production and supports an explicit allowed-origin policy. Verify the configured origin, HTTPS termination, and CSRF behavior before exposing the app to untrusted traffic.
 
 ## API overview
 
@@ -130,7 +130,7 @@ The repository has previously been connected to a Render service, but a current 
 
 - The catalogue is synthetic and deterministic.
 - The local feature-hashing vectorizer is a lexical similarity baseline, not MiniLM.
-- The relevance judgments are provisional unless replaced by a reviewed qrels set.
+- Relevance judgments are manually checked against the deterministic seed-42 catalogue; independent annotator review remains pending.
 - Fixture benchmark values are not empirical production measurements.
 - Report hardware, dataset, workload, repetitions, raw outputs, confidence intervals, and failure cases for every performance claim.
 - See [the 13-phase acceptance audit](docs/13_PHASE_MASTER_ACCEPTANCE.md), [the final report](docs/FINAL_REPORT.md), and [viva preparation](docs/VIVA_PREPARATION.md).
@@ -161,22 +161,3 @@ The live benchmark runner is `npm run benchmark:integration`. It refuses to run 
 - PR Title: `[<slice-id>] <summary>`. PRs must list Acceptance criteria checked, commands/tests run, evidence, and limitations. Issue-to-slice traceability is required for every task and pull request.
 - Every task links to one slice and has one directly responsible owner.
 - Never commit `.env`, credentials, generated datasets, or benchmark output directories.
-
-
-## Active sprint and slice status
-
-- Active Sprint: [Sprint 1 — Research and foundation](docs/sprints/sprint-01.md)
-- `S1-01` — [Repository and contributor workflow](docs/slices/s1-01-repository-and-contributor-workflow.md) (Member A)
-- `S1-02` — [Requirements and research-gap review](docs/slices/s1-02-requirements-and-research-gap-review.md) (Member A)
-- `S1-03` — [Local development configuration](docs/slices/s1-03-local-development-configuration.md) (Member B)
-- `S1-04` — [Architecture contracts and module skeleton](docs/slices/s1-04-architecture-contracts-and-module-skeleton.md) (Member A)
-- `S1-05` — [Vector-store and embedding spike](docs/slices/s1-05-vector-store-and-embedding-spike.md) (Member B)
-
-### Branch, commit, and pull-request conventions
-
-- Feature branch: `feature/<slice-id>-<short-description>`.
-- Fix branch: `fix/<slice-id>-<short-description>`.
-- Commit title: `[<slice-id>] <imperative summary>`.
-- PR Title: `[<slice-id>] <summary>`.
-- Acceptance criteria checked, test commands, evidence, and limitations must be listed in each PR.
-- Issue-to-slice traceability is required for every task and PR.

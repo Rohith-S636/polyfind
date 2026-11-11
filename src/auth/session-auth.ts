@@ -113,10 +113,10 @@ export class SessionAuthService {
     let userId = "";
     try {
       await connection.beginTransaction();
-      const [countRows] = await connection.query<RowDataPacket[]>(
-        "SELECT COUNT(*) AS total FROM users FOR UPDATE",
+      const [existingUsers] = await connection.query<RowDataPacket[]>(
+        "SELECT id FROM users LIMIT 1 FOR UPDATE",
       );
-      if (Number(countRows[0]?.["total"] ?? 0) > 0) {
+      if (existingUsers.length > 0) {
         throw new AuthenticationError("Admin bootstrap has already been completed.", "BOOTSTRAP_CLOSED", 409);
       }
       userId = randomUUID();

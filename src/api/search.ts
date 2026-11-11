@@ -324,12 +324,14 @@ export class SearchService {
         checkedAt: new Date().toISOString(),
       },
       cacheHit: false,
-      sourceTimings: Object.fromEntries(results.map((result) => [
-        result.provider.name === "vector-semantic" || result.provider.name === "vector"
-          ? "vector"
-          : result.provider.name === "neo4j-graph" ? "graph" : result.provider.name,
-        result.elapsedMs,
-      ])),
+      sourceTimings: Object.fromEntries(results
+        .filter((result) => typeof result.elapsedMs === "number" && Number.isFinite(result.elapsedMs) && result.elapsedMs >= 0)
+        .map((result) => [
+          result.provider.name === "vector-semantic" || result.provider.name === "vector"
+            ? "vector"
+            : result.provider.name === "neo4j-graph" ? "graph" : result.provider.name,
+          result.elapsedMs,
+        ])),
     };
 
     // 6. Redis Cache store (if cache configured and response is verified)

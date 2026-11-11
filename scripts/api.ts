@@ -33,6 +33,7 @@ const port = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
 const mode = process.env.CATALOG_MODE ?? (process.env.NODE_ENV === "production" ? "live" : "demo");
 
 let catalog: CatalogReader;
+let catalogRepository: CatalogRepository | undefined;
 let catalogStatus: "available" | "not-configured" | "unavailable";
 let databasePool: ReturnType<typeof createDatabasePool> | undefined;
 const redis = process.env.REDIS_URL ? new RedisCacheAdapter(process.env.REDIS_URL) : undefined;
@@ -58,7 +59,8 @@ if (mode === "demo") {
   try {
     databasePool = createDatabasePool();
     await databasePool.query("SELECT 1");
-    catalog = asCatalogReader(new CatalogRepository(databasePool, redis));
+    catalogRepository = new CatalogRepository(databasePool, redis);
+    catalog = asCatalogReader(catalogRepository);
     catalogStatus = "available";
   } catch {
     console.error("Live catalog mode requires a reachable MySQL database. No demo fallback was used.");
@@ -100,6 +102,10 @@ const outboxWorker = databasePool && outboxTargets.length > 0
 const relational = databasePool ? new RelationalRepository(databasePool, redis) : new InMemoryRelationalStore();
 const app = createApiServer({
   relational,
+  ...(catalogRepository ? {
+    createProduct: (input) => catalogRepository!.createProduct(input),
+    updateProduct: (id, patch, expectedVersion) => catalogRepository!.updateProduct(id, patch, expectedVersion),
+  } : {}),
   authSecret: process.env.AUTH_SECRET,
   catalog,
   search: new SearchService({

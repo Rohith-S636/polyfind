@@ -51,7 +51,7 @@ The seeded catalogue is generated deterministically using a fixed seed and is sy
 - Customer accounts can register and sign in but cannot perform administrator mutations.
 - Admin bootstrap is one-time and token-protected; password hashes use scrypt; only session-token hashes are stored.
 - Login, registration, and bootstrap attempts have process-local throttling. This is defense-in-depth, not a distributed rate limiter.
-- Browser bearer tokens are currently kept in session-scoped browser storage. An HttpOnly Secure SameSite cookie and CSRF strategy remain production-hardening work.
+- Browser authentication uses an HttpOnly, SameSite=Strict session cookie; the API sets Secure in production. The API supports an explicit allowed-origin policy when configured. Deployment must still verify the configured origin, HTTPS termination, and CSRF behavior.
 
 ## 5. Test and integration evidence
 
@@ -87,7 +87,7 @@ No performance superiority claim is made in this draft until the latest measured
 - Graph retrieval currently expands through category relationships; it does not imply a broad product-compatibility knowledge graph.
 - Default fusion weights are explicit but not learned or experimentally optimized.
 - Process-local auth throttling is not sufficient for horizontally scaled public deployment.
-- Session-scoped browser storage is not the final production browser-session design.
+- Cookie-based browser sessions are implemented with HttpOnly and SameSite=Strict attributes; deployment-specific Origin/CSRF configuration and verification remain hardening work.
 - A successful repository CI run does not prove that a Render deployment is running the same commit or has persistent, healthy external services. **Public hosting is not certified** until the deployed commit and all dependencies are independently smoke-tested.
 
 ## 8. Reproducibility

@@ -1,5 +1,4 @@
 import neo4j, { type Driver, type ManagedTransaction, type Session } from "neo4j-driver";
-import { redactSecret } from "../config/environment.js";
 import type { ProductId, SourceVersion } from "../contracts/types.js";
 import type { DerivedStoreSyncTarget } from "./processor.js";
 import type { ProductUpdateEvent } from "./events.js";
@@ -453,7 +452,8 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
         `MATCH (o:Offer {sourceId: $sourceId})
          OPTIONAL MATCH (o)-[relationship]->()
          WHERE type(relationship) IN ['OFFER_FOR', 'PROVIDED_BY', 'OFFER_FOR_VARIANT']
-         DELETE relationship`,
+         WITH o, collect(relationship) AS oldRelationships
+         FOREACH (oldRelationship IN oldRelationships | DELETE oldRelationship)`,
         projection,
       );
       await transaction.run(
@@ -494,7 +494,8 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
       `MATCH (p:Product {sourceId: $productId})
        OPTIONAL MATCH (p)-[old]->()
        WHERE type(old) IN ['IN_CATEGORY', 'HAS_BRAND']
-       DELETE old`,
+       WITH p, collect(old) AS oldRelationships
+       FOREACH (relationship IN oldRelationships | DELETE relationship)`,
       { productId: projection.sourceId },
     );
     if (projection.category) {
@@ -574,7 +575,12 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
   }
 
   private storeError(prefix: string, error: unknown): Error {
-    const message = error instanceof Error ? redactSecret(error.message) : "Unknown Neo4j error";
-    return new Error(`${prefix} ${message}`);
+    const code = typeof error === "object" && error !== null && "code" in error
+      ? (error as { code?: unknown }).code
+      : undefined;
+    const safeCode = typeof code === "string" && /^[A-Za-z0-9_.-]{1,128}$/.test(code)
+      ? code
+      : "UNKNOWN";
+    return new Error(`${prefix} [${safeCode}]`);
   }
 }

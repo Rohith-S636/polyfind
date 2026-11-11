@@ -71,6 +71,7 @@ test("offer projection removes obsolete associations and omits absent variant ed
   await adapter.upsertOffer(offer);
 
   assert.match(queries[1]?.query ?? "", /type\(relationship\) IN \['OFFER_FOR', 'PROVIDED_BY', 'OFFER_FOR_VARIANT'\]/);
+  assert.match(queries[1]?.query ?? "", /collect\(relationship\)/);
   assert.match(queries[2]?.query ?? "", /MERGE \(o\)-\[:OFFER_FOR\]->\(p\)/);
   assert.equal(queries.length, 3);
 });

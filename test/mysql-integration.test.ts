@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
 import {
   CatalogRepository,
@@ -45,6 +45,23 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
       "correct-horse-battery-staple-2026",
       bootstrapToken,
     );
+
+    const tokenHash = createHash("sha256").update(bootstrapped.token, "utf8").digest("hex");
+    const [storedSessionRows] = await pool.query(
+      "SELECT token_hash FROM sessions WHERE token_hash = ?",
+      [tokenHash],
+    );
+    assert.equal((storedSessionRows as Array<{ token_hash: string }>)[0]?.token_hash, tokenHash);
+    const [rawTokenRows] = await pool.query(
+      "SELECT COUNT(*) AS total FROM sessions WHERE token_hash = ?",
+      [bootstrapped.token],
+    );
+    assert.equal(Number((rawTokenRows as Array<{ total: number }>)[0]?.total ?? 0), 0);
+    const [passwordRows] = await pool.query(
+      "SELECT password_hash FROM users WHERE id = ?",
+      [bootstrapped.user.id],
+    );
+    assert.match((passwordRows as Array<{ password_hash: string }>)[0]!.password_hash, /^scrypt\$/);
 
     const createdProduct = await catalog.createProduct({
       id: productId,

@@ -76,9 +76,18 @@ This is an implementation and evaluation project, not a commercial marketplace a
 - Report includes search-quality metrics, freshness violations, latency percentiles, resource/work counts, ablations, limitations, and repeatability details.
 - No novelty or performance claim is made without direct evidence.
 
-## Open questions
+## Open questions and decision tracking
 
-There are no unresolved product-scope questions. Implementation status and remaining acceptance gates are tracked in `13_PHASE_MASTER_ACCEPTANCE.md`.
+| Question | Owner | Decision Target / Date | Current Working Status |
+|---|---|---|---|
+| Which vector database and embedding model/provider will be selected? | Member B | Sprint 1 (`S1-05`) | Resolved: LanceDB is approved; deterministic local feature hashing is the no-credential baseline. |
+| Will authentication be required for the demo, or will it remain a single-user local prototype? | Member A | Sprint 1 (`S1-02`) | Resolved: public browsing, customer registration/login, and administrator-only catalogue mutation are in scope. |
+| What is the final dataset and source/license? | Member B | Sprint 2 (`S2-02`) | Resolved: deterministic synthetic catalogue data with explicit provenance; no retailer scraping. |
+| What is the project deadline and expected sprint duration? | Member A | Sprint 1 milestone review | Six-sprint delivery plan retained in `docs/PARALLEL_WORK_PLAN.md`. |
+| What freshness SLA applies to each field class? | Member A | Sprint 1 (`S1-04` / ADR-002) | Resolved: MySQL is authoritative for transactional facts; derived stores are freshness-checked before use. |
+| Which baselines are feasible after the literature audit? | Member A | Sprint 1 (`S1-02` / `docs/research.md`) | Resolved for evaluation: MySQL-only, fixed multi-store, fixed hybrid, and cache/freshness baselines; results remain evidence-gated. |
+
+The scope decisions above are closed. Remaining implementation and evidence gates are tracked in `13_PHASE_MASTER_ACCEPTANCE.md`.
 
 ## 7. Acceptance and change control
 

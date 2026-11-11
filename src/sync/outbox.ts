@@ -213,7 +213,7 @@ export class MySqlOutboxStore implements OutboxStore {
         `UPDATE outbox_deliveries
          SET status = ?, next_attempt_at = ?, last_error = ?, lease_owner = NULL, lease_expires_at = NULL
          WHERE event_id = ? AND target_name = ? AND status = 'processing' AND lease_owner = ?`,
-        [status, status === "failed" ? nextAttemptAt : null, error.slice(0, 2048), delivery.event.eventId, delivery.targetName, workerId],
+        [status, status === "failed" && nextAttemptAt ? new Date(nextAttemptAt) : null, error.slice(0, 2048), delivery.event.eventId, delivery.targetName, workerId],
       );
       if (result.affectedRows === 1) await this.recomputeEventStatus(connection, delivery.event.eventId, error);
       await connection.commit();
@@ -269,7 +269,7 @@ export class MySqlOutboxStore implements OutboxStore {
          SUM(d.status = 'dead_letter') AS dead,
          SUM(status IN ('applied', 'skipped')) AS complete,
          COUNT(*) AS total
-       FROM outbox_deliveries WHERE event_id = ?`,
+       FROM outbox_deliveries d WHERE d.event_id = ?`,
       [eventId],
     );
     const row = rows[0];

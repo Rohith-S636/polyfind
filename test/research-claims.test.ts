@@ -27,7 +27,7 @@ test("research claims document has a traceable matrix and evidence boundaries", 
     "    "43.18%",",
     "    "114 / 264",",
     "    "Historical regression fixture",",
-    "    "not independently reviewed research qrels",",
+    "    "independent annotators review them",",
 
     "## Claims explicitly not supported",
     "## Threats to validity and limitations",

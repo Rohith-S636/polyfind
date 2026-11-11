@@ -181,6 +181,80 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
     });
   }
 
+  /**
+   * Retrieve active PolyFind graph candidates. MySQL remains authoritative:
+   * callers must hydrate and freshness-check every returned ID.
+   */
+  async retrieveCandidates(
+    query: string,
+    categoryId: string | undefined,
+    limit: number,
+  ): Promise<Array<{ productId: ProductId; score: number; sourceVersion?: SourceVersion }>> {
+    const tokens = query.toLocaleLowerCase().split(/[^a-z0-9]+/).filter(Boolean).slice(0, 12);
+    if (tokens.length === 0) return [];
+    const boundedLimit = Math.min(200, Math.max(1, Math.floor(limit)));
+    const direct = await this.runRead(
+      `MATCH (p:Product)
+       WHERE p.sourceSystem = 'polyfind'
+         AND coalesce(p.status, 'active') = 'active'
+         AND ($categoryId IS NULL OR EXISTS {
+           MATCH (p)-[:IN_CATEGORY]->(:Category {sourceId: $categoryId})
+         })
+       WITH p, size([token IN $tokens WHERE
+         toLower(coalesce(p.name, '')) CONTAINS token OR toLower(p.sourceId) CONTAINS token
+       ]) AS matched
+       WHERE matched > 0
+       RETURN p.sourceId AS productId,
+              toFloat(matched) / size($tokens) AS score,
+              p.sourceVersion AS sourceVersion
+       ORDER BY score DESC, productId ASC
+       LIMIT $limit`,
+      { tokens, categoryId: categoryId ?? null, limit: neo4j.int(boundedLimit) },
+    );
+    const ranked = new Map<string, { score: number; sourceVersion?: number }>();
+    const seeds: Array<{ id: string; score: number }> = [];
+    for (const record of direct.records) {
+      const id = record.get("productId");
+      if (typeof id !== "string") continue;
+      const score = Number(record.get("score"));
+      const versionValue = record.get("sourceVersion");
+      const version = versionValue === null || versionValue === undefined ? undefined : this.toNumber(versionValue);
+      ranked.set(id, { score, ...(version !== undefined ? { sourceVersion: version } : {}) });
+      seeds.push({ id, score });
+    }
+    if (seeds.length > 0 && ranked.size < boundedLimit) {
+      const related = await this.runRead(
+        `UNWIND $seeds AS seedData
+         MATCH (seed:Product {sourceId: seedData.id})-[:IN_CATEGORY]->(category:Category)<-[:IN_CATEGORY]-(candidate:Product)
+         WHERE candidate.sourceSystem = 'polyfind'
+           AND coalesce(candidate.status, 'active') = 'active'
+           AND candidate.sourceId <> seedData.id
+           AND ($categoryId IS NULL OR category.sourceId = $categoryId)
+         RETURN candidate.sourceId AS productId,
+                max(seedData.score * 0.35) AS score,
+                candidate.sourceVersion AS sourceVersion
+         ORDER BY score DESC, productId ASC
+         LIMIT $limit`,
+        { seeds, categoryId: categoryId ?? null, limit: neo4j.int(boundedLimit) },
+      );
+      for (const record of related.records) {
+        const id = record.get("productId");
+        if (typeof id !== "string") continue;
+        const score = Number(record.get("score"));
+        const current = ranked.get(id);
+        if (!current || score > current.score) {
+          const versionValue = record.get("sourceVersion");
+          const version = versionValue === null || versionValue === undefined ? undefined : this.toNumber(versionValue);
+          ranked.set(id, { score, ...(version !== undefined ? { sourceVersion: version } : {}) });
+        }
+      }
+    }
+    return [...ranked.entries()]
+      .map(([productId, value]) => ({ productId, ...value }))
+      .sort((a, b) => b.score - a.score || a.productId.localeCompare(b.productId))
+      .slice(0, boundedLimit);
+  }
+
   async upsertBrand(projection: GraphBrandProjection): Promise<void> {
     await this.runWrite(
       `MERGE (b:Brand {sourceId: $sourceId})

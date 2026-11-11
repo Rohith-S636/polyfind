@@ -145,3 +145,33 @@ export const Neo4jGraphRetrievalAdapter = GraphRetrievalAdapter;
 export function createGraphRetrievalAdapter(storage: InMemoryGraphStorage): GraphRetrievalAdapter {
   return new GraphRetrievalAdapter(storage);
 }
+
+
+/** Minimal graph query contract implemented by the real Neo4j adapter. */
+export interface Neo4jCandidateReader {
+  retrieveCandidates(query: string, categoryId: string | undefined, limit: number):
+    Promise<Array<{ productId: string; score: number; sourceVersion?: number }>>;
+}
+
+/** Production retrieval provider backed by Neo4j rather than an in-memory graph. */
+export class Neo4jGraphRetrievalProvider implements RetrievalProvider {
+  readonly name = "graph";
+
+  constructor(private readonly graph: Neo4jCandidateReader) {}
+
+  async retrieve(request: RetrievalRequest): Promise<RetrievalResult> {
+    const started = performance.now();
+    const candidates = await this.graph.retrieveCandidates(
+      request.query, request.filters.categoryId, request.limit,
+    );
+    return {
+      candidates: candidates.map((candidate) => ({
+        productId: candidate.productId,
+        source: this.name,
+        score: candidate.score,
+        ...(candidate.sourceVersion !== undefined ? { sourceVersion: candidate.sourceVersion } : {}),
+      })),
+      elapsedMs: Math.round((performance.now() - started) * 100) / 100,
+    };
+  }
+}

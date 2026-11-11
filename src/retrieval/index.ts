@@ -70,4 +70,6 @@ export {
   Neo4jGraphRetrievalAdapter,
   createGraphRetrievalAdapter,
   type GraphCandidateStorage,
+  Neo4jGraphRetrievalProvider,
+  type Neo4jCandidateReader,
 } from "./graph-adapter.js";

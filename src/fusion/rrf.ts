@@ -31,6 +31,8 @@ export interface RrfFusionOptions {
   k?: number | undefined;
   /** Maximum number of results to return. Unlimited when omitted. */
   limit?: number | undefined;
+  /** Per-provider contribution weights for weighted reciprocal-rank fusion. */
+  weights?: Readonly<Record<string, number>> | undefined;
 }
 
 export interface RrfSourceList {
@@ -66,9 +68,12 @@ export function reciprocalRankFusion(
       b.score !== a.score ? b.score - a.score : a.productId.localeCompare(b.productId),
     );
 
+    const configuredWeight = options.weights?.[sourceList.source];
+    const weight = configuredWeight === undefined ? 1 : configuredWeight;
+    if (!Number.isFinite(weight) || weight <= 0) continue;
     for (let rank = 0; rank < sorted.length; rank++) {
       const candidate = sorted[rank]!;
-      const contribution = 1 / (k + rank + 1);
+      const contribution = weight / (k + rank + 1);
       const existing = accumulator.get(candidate.productId);
       if (!existing) {
         accumulator.set(candidate.productId, {

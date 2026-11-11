@@ -4,6 +4,7 @@ import {
   InMemoryCatalog,
   SearchService,
   MySqlKeywordRetrievalProvider,
+  Neo4jGraphRetrievalProvider,
   RelationalRepository,
   InMemoryRelationalStore,
   generateSeedDataset,
@@ -77,6 +78,7 @@ if (mode === "demo") {
 
 if (redis) catalog = new CachedCatalogReader(catalog, redis);
 const semanticProvider = vector.getSemanticProvider();
+const graphProvider = graph ? new Neo4jGraphRetrievalProvider(graph as Neo4jGraphAdapter) : undefined;
 const outboxTargets = [
   new LazyOutboxTarget("redis", async () => {
     if (!redis) throw new PermanentOutboxError("Redis is intentionally disabled.");
@@ -115,8 +117,9 @@ const apiServer = createApiServer({
     catalog,
     ...(databasePool ? { keywordProvider: new MySqlKeywordRetrievalProvider(databasePool) } : {}),
     ...(semanticProvider ? { semanticProvider } : {}),
+    ...(graphProvider ? { graphProvider } : {}),
     ...(redis ? { cache: redis } : {}),
-    hybrid: Boolean(semanticProvider),
+    hybrid: Boolean(semanticProvider || graphProvider),
   }),
   dependencyStatus: {
     catalog: catalogStatus,

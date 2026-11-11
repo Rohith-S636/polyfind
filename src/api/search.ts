@@ -21,6 +21,7 @@ export interface SearchServiceOptions {
   keywordProvider?: RetrievalProvider | undefined;
   providers?: readonly RetrievalProvider[] | undefined;
   semanticProvider?: RetrievalProvider | undefined;
+  graphProvider?: RetrievalProvider | undefined;
   cache?: CatalogCache | undefined;
   cacheTtlSeconds?: number | undefined;
   planner?: RetrievalPlanner | undefined;
@@ -120,6 +121,7 @@ export class SearchService {
     this.providers = options.providers ?? [
       keywordProvider,
       ...(options.semanticProvider ? [options.semanticProvider] : []),
+      ...(options.graphProvider ? [options.graphProvider] : []),
     ];
     this.cache = options.cache;
     this.cacheTtlSeconds = options.cacheTtlSeconds ?? 60;
@@ -133,10 +135,11 @@ export class SearchService {
   async search(options: SearchQueryOptions): Promise<SearchResponse> {
     const started = performance.now();
 
-    const hasSemantic = this.providers.some(
-      (p) => p.name === "vector-semantic" || p.name === "vector",
+    const hasHybridSource = this.providers.some(
+      (p) => p.name === "vector-semantic" || p.name === "vector" ||
+        p.name === "graph" || p.name === "neo4j-graph",
     );
-    const isHybridRequested = (options.hybrid ?? this.hybrid) && hasSemantic;
+    const isHybridRequested = (options.hybrid ?? this.hybrid) && hasHybridSource;
     const effectiveStrategy = isHybridRequested ? "hybrid" : "keyword";
 
     // 1. Redis Cache lookup (gracefully bypassed on outage or miss)
@@ -261,7 +264,9 @@ export class SearchService {
     let candidates: RetrievalCandidate[];
     if (sourceLists.length > 1) {
       // Multiple retrieval sources available -> Reciprocal Rank Fusion
-      const fused = reciprocalRankFusion(sourceLists);
+      const fused = reciprocalRankFusion(sourceLists, {
+        weights: { mysql: 0.50, "vector-semantic": 0.35, vector: 0.35, graph: 0.15, "neo4j-graph": 0.15 },
+      });
       candidates = fused.map((f) => ({
         productId: f.productId,
         source: f.sources.join(","),

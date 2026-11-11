@@ -19,6 +19,11 @@ export const Header: React.FC<HeaderProps> = ({ health, healthError }) => {
           </div>
         </Link>
 
+        <nav aria-label="Account navigation" style={{ display: "flex", gap: "0.9rem", alignItems: "center", marginLeft: "auto", marginRight: "1rem", fontSize: "0.85rem" }}>
+          <Link href="/login">Sign in</Link>
+          <Link href="/register">Create account</Link>
+          <Link href="/admin">Admin</Link>
+        </nav>
         <div className="header-status">
           {healthError ? (
             <div className="health-badge error" role="status" title="API unreachable. Check backend.">

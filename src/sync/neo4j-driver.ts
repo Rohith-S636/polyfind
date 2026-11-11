@@ -388,7 +388,7 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
                 v.sourceVersion = $sourceVersion, v.status = $status,
                 v.sourceSystem = 'polyfind'
          RETURN v`,
-        projection,
+        { ...projection, sku: projection.sku ?? null },
       );
       if (result.records.length > 0) {
         await transaction.run(

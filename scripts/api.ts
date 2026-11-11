@@ -23,6 +23,7 @@ import {
   UnavailableOutboxTarget,
   LazyOutboxTarget,
   PermanentOutboxError,
+  SessionAuthService,
 } from "../src/index.js";
 import type { CatalogReader } from "../src/contracts/types.js";
 import type { Neo4jGraphAdapter } from "../src/sync/neo4j-driver.js";
@@ -100,13 +101,14 @@ const outboxWorker = databasePool && outboxTargets.length > 0
   ? new OutboxWorker({ store: new MySqlOutboxStore(databasePool), targets: outboxTargets })
   : undefined;
 const relational = databasePool ? new RelationalRepository(databasePool, redis) : new InMemoryRelationalStore();
+const auth = databasePool ? new SessionAuthService(databasePool, process.env.AUTH_BOOTSTRAP_TOKEN) : undefined;
 const app = createApiServer({
   relational,
   ...(catalogRepository ? {
     createProduct: (input) => catalogRepository!.createProduct(input),
     updateProduct: (id, patch, expectedVersion) => catalogRepository!.updateProduct(id, patch, expectedVersion),
   } : {}),
-  authSecret: process.env.AUTH_SECRET,
+  auth,
   catalog,
   search: new SearchService({
     catalog,

@@ -203,13 +203,32 @@ export function parseCategoryInput(input: unknown): Category {
 export function parseSearchResponse(input: unknown): SearchResponse {
   if (!isRecord(input)) throw new ContractValidationError("INVALID_RESPONSE", [{ path: "", message: "Expected a JSON object" }]);
   const issues: ContractIssue[] = [];
-  validateObjectKeys(input, ["items", "page", "total", "strategy", "timings", "freshness"], "", issues);
+  validateObjectKeys(input, ["items", "page", "total", "strategy", "timings", "freshness", "sourceTimings", "cacheHit"], "", issues);
   if (!Array.isArray(input.items)) issues.push({ path: "items", message: "Expected an array" });
   if (typeof input.page !== "number" || !Number.isInteger(input.page) || input.page < 1) issues.push({ path: "page", message: "Expected a positive integer" });
   if (typeof input.total !== "number" || !Number.isInteger(input.total) || input.total < 0) issues.push({ path: "total", message: "Expected a non-negative integer" });
   const strategy = requiredString(input, "strategy", "", issues);
   const timings = parseSearchTimings(input.timings, issues);
   const freshness = parseFreshnessSummaryForResponse(input.freshness, issues);
+  let sourceTimings: Record<string, number> | undefined;
+  if (input.sourceTimings !== undefined) {
+    if (!isRecord(input.sourceTimings)) {
+      issues.push({ path: "sourceTimings", message: "Expected an object of provider timings" });
+    } else {
+      sourceTimings = {};
+      for (const [source, value] of Object.entries(input.sourceTimings)) {
+        if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+          issues.push({ path: `sourceTimings.${source}`, message: "Expected a finite non-negative number" });
+        } else {
+          sourceTimings[source] = value;
+        }
+      }
+    }
+  }
+  const cacheHit = input.cacheHit;
+  if (cacheHit !== undefined && typeof cacheHit !== "boolean") {
+    issues.push({ path: "cacheHit", message: "Expected a boolean" });
+  }
   const items: SearchResponse["items"] = [];
   if (Array.isArray(input.items)) {
     input.items.forEach((item, index) => {
@@ -224,7 +243,16 @@ export function parseSearchResponse(input: unknown): SearchResponse {
     });
   }
   throwIfInvalid("INVALID_RESPONSE", issues);
-  return { items, page: input.page as number, total: input.total as number, strategy: strategy!, timings, freshness };
+  return {
+    items,
+    page: input.page as number,
+    total: input.total as number,
+    strategy: strategy!,
+    timings,
+    freshness,
+    ...(sourceTimings ? { sourceTimings } : {}),
+    ...(typeof cacheHit === "boolean" ? { cacheHit } : {}),
+  };
 }
 
 export function parseBenchmarkConfiguration(input: unknown): BenchmarkConfiguration {

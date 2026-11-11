@@ -160,6 +160,7 @@ export class FreshnessValidator {
         };
         violation.authoritativeVersion = product.version;
         recordUnverifiable(telemetry);
+        recordUnverifiable(this.telemetry);
         results.push({
           candidate,
           status: "unverifiable",
@@ -201,6 +202,7 @@ export class FreshnessValidator {
           reason: "authority-unavailable",
         };
         recordUnverifiable(telemetry);
+        recordUnverifiable(this.telemetry);
         results.push({
           candidate,
           status: "unverifiable",

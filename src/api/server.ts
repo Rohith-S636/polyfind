@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { healthCheck } from "../contracts/health.js";
 import { ContractValidationError } from "../contracts/errors.js";
 import { parseSearchRequest } from "../contracts/validation.js";
-import type { CatalogReader, ProductFilters } from "../contracts/types.js";
+import type { CatalogReader, Product, ProductFilters } from "../contracts/types.js";
 import {
   CatalogValidationError,
   NotFoundError,
@@ -20,6 +20,8 @@ import {
   type SellerStatus,
   type ListProductsOptions,
   type PaginatedProducts,
+  type CreateProductInput,
+  type UpdateProductInput,
 } from "../catalog/index.js";
 import { SearchService } from "./search.js";
 import type { RedisConnectionStatus } from "../cache/redis-adapter.js";
@@ -32,6 +34,8 @@ export interface ApiServerOptions {
   catalog: CatalogReader;
   relational?: RelationalStore | undefined;
   productList?: ((options: ListProductsOptions) => Promise<PaginatedProducts>) | undefined;
+  createProduct?: ((input: CreateProductInput) => Promise<Product>) | undefined;
+  updateProduct?: ((id: string, patch: UpdateProductInput, expectedVersion?: number) => Promise<Product>) | undefined;
   search?: SearchService | undefined;
   authSecret?: string | undefined;
   dependencyStatus?: Record<string, "available" | "not-configured" | "unavailable"> | undefined;
@@ -279,6 +283,32 @@ async function handle(
   try {
     // PUT / PATCH endpoints
     if (request.method === "PUT" || request.method === "PATCH") {
+      const productMatch = /^\/api\/products\/([^/]+)$/.exec(url.pathname);
+      if (productMatch && options.updateProduct) {
+        if (!checkMutationAuth(request, options.authSecret)) {
+          sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
+          return;
+        }
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) {
+          throw new CatalogValidationError("Request body must be a JSON object.");
+        }
+        const body = rawBody as Record<string, unknown>;
+        const expectedVersion = body["expectedVersion"] === undefined ? undefined : Number(body["expectedVersion"]);
+        if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 1)) {
+          throw new CatalogValidationError("expectedVersion must be a positive integer.");
+        }
+        const patch: UpdateProductInput = {};
+        if (body["name"] !== undefined) patch.name = String(body["name"]);
+        if (body["description"] !== undefined) patch.description = String(body["description"]);
+        if (body["categoryId"] !== undefined) patch.categoryId = String(body["categoryId"]);
+        if (body["price"] !== undefined) patch.price = Number(body["price"]);
+        if (body["stock"] !== undefined) patch.stock = Number(body["stock"]);
+        const updated = await options.updateProduct(decodeURIComponent(productMatch[1]!), patch, expectedVersion);
+        sendJson(response, 200, { item: updated, version: updated.version });
+        return;
+      }
+
       const offerMatch = /^\/api\/offers\/([^/]+)$/.exec(url.pathname);
       if (offerMatch) {
         if (!checkMutationAuth(request, options.authSecret)) {
@@ -341,6 +371,30 @@ async function handle(
           ...(hybrid !== undefined ? { hybrid } : {}),
         });
         sendJson(response, 200, result);
+        return;
+      }
+
+      if (url.pathname === "/api/products" && options.createProduct) {
+        if (!checkMutationAuth(request, options.authSecret)) {
+          sendJson(response, 401, { error: { code: "UNAUTHORIZED", message: "Authentication required for catalogue mutations." } });
+          return;
+        }
+        const rawBody = await readJsonBody(request);
+        if (typeof rawBody !== "object" || rawBody === null || Array.isArray(rawBody)) {
+          throw new CatalogValidationError("Request body must be a JSON object.");
+        }
+        const body = rawBody as Record<string, unknown>;
+        if (typeof body["id"] !== "string" || typeof body["name"] !== "string" ||
+            typeof body["description"] !== "string" || typeof body["categoryId"] !== "string" ||
+            typeof body["price"] !== "number" || typeof body["stock"] !== "number") {
+          throw new CatalogValidationError("Product requires string id, name, description, categoryId and numeric price and stock.");
+        }
+        const input: CreateProductInput = {
+          id: body["id"], name: body["name"], description: body["description"],
+          categoryId: body["categoryId"], price: body["price"], stock: body["stock"],
+        };
+        const created = await options.createProduct(input);
+        sendJson(response, 201, { item: created });
         return;
       }
 

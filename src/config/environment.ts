@@ -16,7 +16,6 @@ export interface AppConfig {
   vectorStoreUrl?: string | undefined;
   embeddingProvider: string;
   embeddingModel?: string | undefined;
-  authSecret?: string | undefined;
 }
 
 export class ConfigurationError extends Error {
@@ -143,6 +142,5 @@ export function validateEnvironment(
     vectorStoreUrl: env.VECTOR_STORE_URL,
     embeddingProvider: env.EMBEDDING_PROVIDER || "mock",
     embeddingModel: env.EMBEDDING_MODEL,
-    authSecret: env.AUTH_SECRET,
   };
 }

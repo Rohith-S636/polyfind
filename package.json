@@ -15,7 +15,8 @@
     "check:production": "npm run typecheck && npm run typecheck:scripts && npm run build",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed-catalog.ts",
-    "api": "tsx scripts/api.ts"
+    "api": "tsx scripts/api.ts",
+    "benchmark:integration": "tsx scripts/run-benchmark.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

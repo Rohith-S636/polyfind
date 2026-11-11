@@ -183,6 +183,7 @@ export class SearchService {
           if (cacheValid) {
             return {
               ...cached.data,
+              cacheHit: true,
               timings: {
                 ...cached.data.timings,
                 totalMs: Math.round((performance.now() - started) * 100) / 100,
@@ -322,6 +323,13 @@ export class SearchService {
         status: freshnessStatus,
         checkedAt: new Date().toISOString(),
       },
+      cacheHit: false,
+      sourceTimings: Object.fromEntries(results.map((result) => [
+        result.provider.name === "vector-semantic" || result.provider.name === "vector"
+          ? "vector"
+          : result.provider.name === "neo4j-graph" ? "graph" : result.provider.name,
+        result.elapsedMs,
+      ])),
     };
 
     // 6. Redis Cache store (if cache configured and response is verified)

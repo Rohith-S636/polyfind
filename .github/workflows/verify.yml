@@ -45,6 +45,19 @@ jobs:
           --health-retries=12
     env:
       TEST_DATABASE_URL: mysql://polyfind_test:polyfind_test_password@127.0.0.1:3306/polyfind_test
+      DATABASE_URL: mysql://polyfind_test:polyfind_test_password@127.0.0.1:3306/polyfind_test
+      CATALOG_MODE: live
+      REDIS_URL: redis://127.0.0.1:6379
+      NEO4J_URI: bolt://127.0.0.1:7687
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: polyfind_test_password
+      NEO4J_DATABASE: neo4j
+      LANCEDB_PATH: /tmp/polyfind-benchmark-lancedb
+      POLYFIND_BENCHMARK_DISPOSABLE: "true"
+      POLYFIND_BENCHMARK_DATASET_SIZE: "50"
+      POLYFIND_BENCHMARK_OPERATIONS: "100"
+      POLYFIND_BENCHMARK_RUNS: "3"
+      POLYFIND_BENCHMARK_SEED: "42"
       POLYFIND_REDIS_TEST_URL: redis://127.0.0.1:6379
       POLYFIND_NEO4J_TEST_URI: bolt://127.0.0.1:7687
       POLYFIND_NEO4J_TEST_USERNAME: neo4j
@@ -60,4 +73,16 @@ jobs:
       - run: npm run typecheck
       - run: npm run typecheck:scripts
       - run: npm test
+      - name: Prepare disposable benchmark catalogue
+        run: |
+          npm run migrate
+          npm run seed -- --seed=42 --count=50
+      - name: Run repeated live multi-store benchmark
+        run: npm run benchmark:integration
+      - name: Upload measured benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: polyfind-measured-benchmark
+          path: artifacts/polyfind-benchmark-*.json
+          if-no-files-found: error
       - run: npm run build

@@ -106,5 +106,5 @@ The following earlier draft statements are superseded and are not open questions
 - Feature hashing is a lexical vector baseline, not a pretrained semantic model.
 - Relevance judgments require review and independent annotation before strong quality claims.
 - Benchmark results are environment-, seed-, workload-, and configuration-dependent.
-- Browser token storage and process-local throttling, if still present, must be disclosed as hardening limitations rather than described as production-grade security.
+- Browser sessions use HttpOnly, SameSite=Strict cookies (Secure in production); deployment-specific Origin/CSRF verification and shared rate limiting remain hardening requirements.
 - Free hosting may sleep, lose ephemeral state, or lack compatible persistent services; local Docker remains the reproducible demonstration path.

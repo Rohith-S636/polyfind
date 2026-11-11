@@ -81,13 +81,21 @@ test("LanceDB integration persists, searches, protects versions, and deletes", {
     vector: [1, 0, 0],
     metadata: { name: "Test product", categoryId: "test", price: 10, inStock: true, version: 2 },
   };
+  const expensiveRecord = {
+    id: `${record.id}-expensive`,
+    vector: [0.9, 0.1, 0],
+    metadata: { name: "Expensive product", categoryId: "test", price: 100, inStock: true, version: 1 },
+  };
   try {
     await store.initialize();
     await store.upsert(record);
     await store.upsert({ ...record, metadata: { ...record.metadata, name: "stale", version: 1 } });
-    assert.equal(await store.count(), 1);
+    await store.upsert(expensiveRecord);
+    assert.equal(await store.count(), 2);
     const matches = await store.search({ vector: [1, 0, 0], limit: 5 });
     assert.equal(matches[0]?.metadata.name, "Test product");
+    const filteredMatches = await store.search({ vector: [1, 0, 0], limit: 5, filter: { minPrice: 50 } });
+    assert.deepEqual(filteredMatches.map((match) => match.id), [expensiveRecord.id]);
     await store.close();
 
     const reopened = new LanceDbVectorStore({
@@ -97,8 +105,11 @@ test("LanceDB integration persists, searches, protects versions, and deletes", {
       modelName: "test-model",
     });
     await reopened.initialize();
-    assert.equal(await reopened.count(), 1);
+    assert.equal(await reopened.count(), 2);
+    const reopenedFilteredMatches = await reopened.search({ vector: [1, 0, 0], limit: 5, filter: { minPrice: 50 } });
+    assert.deepEqual(reopenedFilteredMatches.map((match) => match.id), [expensiveRecord.id]);
     assert.equal(await reopened.delete(record.id), true);
+    assert.equal(await reopened.delete(expensiveRecord.id), true);
     assert.equal(await reopened.count(), 0);
     await reopened.close();
   } finally {

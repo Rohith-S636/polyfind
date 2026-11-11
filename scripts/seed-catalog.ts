@@ -4,6 +4,7 @@ import {
   closeDatabasePool,
   generateSeedDataset,
   getDatabasePool,
+  CatalogRepository,
   loadEnvironment,
   validateSeedDataset,
 } from "../src/index.js";
@@ -40,64 +41,42 @@ async function main(): Promise<void> {
     console.log("Seeding MySQL database...");
     const pool = getDatabasePool();
     try {
-      const conn = await pool.getConnection();
-      try {
-        await conn.beginTransaction();
+      const repository = new CatalogRepository(pool);
+      let categoriesCreated = 0;
+      let productsCreated = 0;
+      let categoriesSkipped = 0;
+      let productsSkipped = 0;
 
-        for (const cat of dataset.categories) {
-          await conn.query(
-            "INSERT INTO categories (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)",
-            [cat.id, cat.name],
-          );
+      // Additive and idempotent: never overwrite existing prices, stock,
+      // versions, or catalogue content. Repository writes emit audit/outbox.
+      for (const category of dataset.categories) {
+        if (await repository.getCategory(category.id)) {
+          categoriesSkipped += 1;
+          continue;
         }
-
-        for (const prod of dataset.products) {
-          await conn.query(
-            `INSERT INTO products (id, name, description, category_id, price, currency, stock, availability, brand, attributes, image_url, product_url, data_source, version, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE
-               name = VALUES(name),
-               description = VALUES(description),
-               category_id = VALUES(category_id),
-               price = VALUES(price),
-               currency = VALUES(currency),
-               stock = VALUES(stock),
-               availability = VALUES(availability),
-               brand = VALUES(brand),
-               attributes = VALUES(attributes),
-               image_url = VALUES(image_url),
-               product_url = VALUES(product_url),
-               data_source = VALUES(data_source),
-               version = VALUES(version),
-               updated_at = VALUES(updated_at)`,
-            [
-              prod.id,
-              prod.name,
-              prod.description,
-              prod.categoryId,
-              prod.price,
-              prod.currency ?? "USD",
-              prod.stock,
-              prod.availability ?? "unknown",
-              prod.brand ?? null,
-              prod.attributes ? JSON.stringify(prod.attributes) : null,
-              prod.imageUrl ?? null,
-              prod.productUrl ?? null,
-              prod.dataSource ?? "demo",
-              prod.version,
-              new Date(prod.updatedAt),
-            ],
-          );
-        }
-
-        await conn.commit();
-        console.log(`Successfully seeded ${dataset.products.length} products into MySQL.`);
-      } catch (err) {
-        await conn.rollback();
-        throw err;
-      } finally {
-        conn.release();
+        await repository.createCategory({ id: category.id, name: category.name });
+        categoriesCreated += 1;
       }
+
+      for (const product of dataset.products) {
+        if (await repository.getProduct(product.id)) {
+          productsSkipped += 1;
+          continue;
+        }
+        await repository.createProduct({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          categoryId: product.categoryId,
+          price: product.price,
+          stock: product.stock,
+        });
+        productsCreated += 1;
+      }
+
+      console.log(
+        `Seed completed: ${categoriesCreated} categories and ${productsCreated} products created; ${categoriesSkipped} categories and ${productsSkipped} existing products left unchanged.`,
+      );
     } catch (err) {
       console.error("Could not seed live MySQL database:", err instanceof Error ? err.message : String(err));
       process.exitCode = 1;

@@ -5,6 +5,7 @@ import {
   generateSeedDataset,
   getDatabasePool,
   CatalogRepository,
+  RelationalRepository,
   loadEnvironment,
   validateSeedDataset,
 } from "../src/index.js";
@@ -74,8 +75,61 @@ async function main(): Promise<void> {
         productsCreated += 1;
       }
 
+      const relational = new RelationalRepository(pool);
+      const sellers = [
+        { id: "seller-demo-01", name: "PolyFind Direct", slug: "polyfind-direct" },
+        { id: "seller-demo-02", name: "Campus Tech Store", slug: "campus-tech-store" },
+        { id: "seller-demo-03", name: "Value Market", slug: "value-market" },
+      ];
+      for (const seller of sellers) {
+        if (!(await relational.getSeller(seller.id))) {
+          await relational.createSeller(seller);
+        }
+      }
+
+      let variantsCreated = 0;
+      let offersCreated = 0;
+      const priceFactors = [1, 1.04, 0.97];
+      for (const generated of dataset.products) {
+        const canonical = await repository.getProduct(generated.id);
+        if (!canonical) continue;
+        const variants = await relational.listProductVariants(canonical.id);
+        let variantId = variants[0]?.id;
+        if (!variantId) {
+          variantId = `${canonical.id}-standard`;
+          await relational.createProductVariant({
+            id: variantId,
+            productId: canonical.id,
+            variantKey: "standard",
+            sku: `SKU-${canonical.id}-STD`,
+            attributes: { edition: "standard" },
+          });
+          variantsCreated += 1;
+        }
+
+        const existing = await relational.listOffers({ productId: canonical.id, page: 1, limit: 100 });
+        for (let index = 0; index < sellers.length; index += 1) {
+          const seller = sellers[index]!;
+          if (existing.items.some((offer) => offer.sellerId === seller.id && offer.variantId === variantId)) continue;
+          const stockQuantity = canonical.stock > 0 ? Math.min(canonical.stock, 20) : 0;
+          const price = Math.round(canonical.price * priceFactors[index]! * 100) / 100;
+          await relational.createOffer({
+            id: `${canonical.id}-${seller.id}-offer`,
+            productId: canonical.id,
+            sellerId: seller.id,
+            variantId,
+            currency: canonical.currency ?? "USD",
+            price,
+            stockQuantity,
+            availability: stockQuantity > 0 ? "available" : "unavailable",
+            changeReason: "deterministic_seed",
+          });
+          offersCreated += 1;
+        }
+      }
+
       console.log(
-        `Seed completed: ${categoriesCreated} categories and ${productsCreated} products created; ${categoriesSkipped} categories and ${productsSkipped} existing products left unchanged.`,
+        `Seed completed: ${categoriesCreated} categories and ${productsCreated} products created; ${categoriesSkipped} categories and ${productsSkipped} existing products left unchanged; ${variantsCreated} variants and ${offersCreated} seller offers created.`,
       );
     } catch (err) {
       console.error("Could not seed live MySQL database:", err instanceof Error ? err.message : String(err));

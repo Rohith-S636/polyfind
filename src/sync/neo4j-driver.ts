@@ -452,6 +452,7 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
       await transaction.run(
         `MATCH (o:Offer {sourceId: $sourceId})
          OPTIONAL MATCH (o)-[relationship]->()
+         WHERE type(relationship) IN ['OFFER_FOR', 'PROVIDED_BY', 'OFFER_FOR_VARIANT']
          DELETE relationship`,
         projection,
       );

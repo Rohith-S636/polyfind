@@ -3,11 +3,12 @@
 ## Scope and evidence status
 
 This document separates established system knowledge, the PolyFind proposal, and
-findings measured by the repository's deterministic benchmark fixture. The
-benchmark uses a 50-product catalog, 100 operations, a medium update regime,
-and a 40% keyword / 30% filtered / 20% semantic / 10% relationship mix. The
-relevance labels are provisional hand-authored judgments for 10 queries, not
-user judgments or independent-annotator consensus.
+measurements from a repeated live benchmark on disposable CI services. The
+benchmark uses a deterministic 50-product catalogue, 100 operations, a medium
+update regime, and a 40% keyword / 30% filtered / 20% semantic / 10% relationship
+mix. Relevance labels are manually checked against the seed-42 catalogue but
+remain provisional until independent annotators review them; they are not user
+judgments or annotator consensus.
 
 The results support claims about this implementation and workload only. They do
 not establish production performance, general superiority, or a universal
@@ -60,30 +61,63 @@ PolyFind proposes a reproducible prototype policy with four linked controls:
 This is a proposed architecture and baseline policy. It is not presented as a
 new general-purpose optimizer or as first-of-its-kind work.
 
-## Findings supported by the committed fixture
+## Measured CI benchmark (2026-11-11)
 
-The values below are descriptive measurements from
-[`test/fixtures/baseline-comparison.json`](../test/fixtures/baseline-comparison.json),
-not confidence-tested population estimates:
+The current measured evidence is the GitHub Actions run
+[42959976828](https://github.com/Rohith-S636/polyfind/actions/runs/42959976828),
+commit `b90ec799ca083fede1817aaac80b985e2fe59cb1`. Download the
+`polyfind-measured-benchmark` artifact from that run for raw observations,
+environment metadata, and per-query relevance results.
 
-- PolyFind Adaptive measured NDCG@10 `0.880`, precision@10 `0.880`, median
-  latency `2.40 ms`, p95 latency `2.90 ms`, and `1.30` store dispatches/query.
-- The same fixture records `0.0%` freshness violations for PolyFind Adaptive
-  and MySQL-Only, versus `18.5%` for the TTL-Only Cache baseline under the
+### Reproducibility configuration
+
+- MySQL 8.0.46, database `polyfind_test` (disposable CI database).
+- Deterministic seed 42; 50 products indexed in LanceDB.
+- 100 operations per run, 1 warm-up run, 3 measured repetitions.
+- 40% keyword, 30% filtered, 20% semantic, and 10% relationship query mix;
   medium update regime.
-- PolyFind Adaptive measured lower p95 latency than Fixed MultiStore
-  (`2.90 ms` versus `14.20 ms`) and fewer dispatches (`1.30` versus `4.00`).
-- The cache-disabled ablation records `13.10 ± 0.45 ms` p95 latency versus
-  `2.90 ± 0.12 ms` for the full condition. The vector-disabled ablation
-  records a `52.3%` relevance drop, while disabling freshness validation
-  records `24.0%` freshness violations.
-- The measured freshness result is bounded by the validator, fixtures, and
-  tested update delays. It is not evidence that every deployment will have
-  zero stale reads.
+- Node.js 22.23.4 on Linux x64, 4 vCPUs (AMD EPYC 9V74), approximately 15.6 GiB
+  memory.
+- Local vectorizer: deterministic feature hashing
+  (`polyfind-feature-hash-v1`); fusion weights: MySQL 0.50, vector 0.35,
+  graph 0.15.
 
-The S6-01 summaries use descriptive sample variance and a normal-approximation
-95% confidence interval. Those intervals describe repeated runs; they are not
-statistical significance tests, causal estimates, or evidence of superiority.
+### Measured results
+
+| Strategy | Mean query latency (ms) | p95 across the 3 runs (ms) | NDCG@10 | Non-verified query observations |
+|---|---:|---:|---:|---:|
+| MySQL only | 1.12 | 3.45–4.16 | 0.867 | 0 / 264 |
+| MySQL + Redis cache | 2.79 | 3.55–4.28 | 0.867 | 0 / 264 |
+| Fixed weighted hybrid | 8.42 | 11.82–14.97 | 0.887 | 114 / 264 (43.18%) |
+| Adaptive weighted hybrid + cache | 9.42 | 10.73–21.55 | 0.887 | 114 / 264 (43.18%) |
+
+The MySQL+Redis cache hit rate was 8.0–9.1% across the three measured runs;
+the adaptive hybrid cache hit rate was 1.1–3.4%. These are descriptive results
+from one small synthetic workload, not general latency estimates.
+
+The relevance labels were checked against the exact deterministic seed-42
+product IDs, names, descriptions, categories, and query filters. The hybrid
+conditions' NDCG@10 of 0.887 versus 0.867 for MySQL-only is a small descriptive
+difference over 10 manually judged queries. It is not a significance test,
+independent relevance study, or evidence of general superiority.
+
+### Freshness interpretation
+
+The artifact's `freshnessViolationRate` counts query responses whose freshness
+status is not `verified`. It is a signal that one or more derived candidates
+were stale or unverifiable. It is **not** a count of stale price or stock facts
+presented to users: strict mode rejects stale/unverifiable candidates, and
+returned product fields are hydrated from authoritative MySQL. The 43.18%
+hybrid observation rate therefore identifies derived-candidate freshness
+degradation under the update workload and should be discussed as a limitation,
+not hidden or relabeled as a zero-lag result.
+
+### Historical regression fixture
+
+`test/fixtures/baseline-comparison.json` remains a fixed regression and
+visualization fixture. Its values are not current measured results and must not
+be quoted as empirical findings. The GitHub Actions artifact above is the
+measured source for the run described in this section.
 
 ## Claims explicitly not supported
 

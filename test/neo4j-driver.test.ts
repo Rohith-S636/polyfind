@@ -5,6 +5,7 @@ import { Neo4jGraphAdapter, type GraphOfferProjection, type GraphVariantProjecti
 
 function createRecordingAdapter(options: { fail?: boolean } = {}) {
   const queries: Array<{ query: string; parameters: Record<string, unknown> }> = [];
+  const reads: Array<{ query: string; parameters: Record<string, unknown> }> = [];
   const transaction = {
     run: async (query: string, parameters: Record<string, unknown> = {}) => {
       queries.push({ query, parameters });
@@ -14,7 +15,10 @@ function createRecordingAdapter(options: { fail?: boolean } = {}) {
   } as unknown as ManagedTransaction;
   const session = {
     executeWrite: async <T>(work: (tx: ManagedTransaction) => Promise<T>) => work(transaction),
-    run: async () => ({ records: [] }),
+    run: async (query: string, parameters: Record<string, unknown> = {}) => {
+      reads.push({ query, parameters });
+      return { records: [] };
+    },
     close: async () => {},
   } as unknown as Session;
   const driver = {
@@ -30,6 +34,7 @@ function createRecordingAdapter(options: { fail?: boolean } = {}) {
       password: "test",
     }, driver),
     queries,
+    reads,
   };
 }
 
@@ -96,4 +101,18 @@ test("projection errors propagate to the caller", async () => {
     adapter.upsertVariant(variant),
     /Neo4j operation failed|projection failed/,
   );
+});
+
+
+test("Neo4j graph retrieval uses parameterized query tokens and category constraints", async () => {
+  const { adapter, reads } = createRecordingAdapter();
+  await adapter.connect();
+  const candidates = await adapter.retrieveCandidates("trail tent", "cat-outdoors", 25);
+  assert.deepEqual(candidates, []);
+  assert.equal(reads.length, 1);
+  assert.match(reads[0]!.query, /IN_CATEGORY/);
+  assert.match(reads[0]!.query, /\$tokens/);
+  assert.deepEqual(reads[0]!.parameters.tokens, ["trail", "tent"]);
+  assert.equal(reads[0]!.parameters.categoryId, "cat-outdoors");
+  assert.equal(Number(reads[0]!.parameters.limit), 25);
 });

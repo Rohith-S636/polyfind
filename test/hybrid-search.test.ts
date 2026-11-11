@@ -10,6 +10,7 @@ import {
   createApiServer,
   RedisCacheAdapter,
   reciprocalRankFusion,
+  Neo4jGraphRetrievalProvider,
   fuseWithRrf,
   DeterministicEmbeddingProvider,
   VectorSemanticRetrievalAdapter,
@@ -107,6 +108,49 @@ test("3. Reciprocal Rank Fusion (RRF) combines heterogeneous rankings using 1/(k
   assert.ok(Math.abs(p2.rrfScore - expectedP2Rrf) < 0.0001);
   assert.deepEqual(p2.sources, ["keyword", "semantic"]);
   assert.equal(fused[0]?.productId, "p2", "p2 appears in both lists so it should rank first");
+});
+
+test("weighted reciprocal-rank fusion applies explicit source weights", () => {
+  const sources = [
+    { source: "mysql", candidates: [
+      { productId: "p1", source: "mysql", score: 1 },
+      { productId: "p2", source: "mysql", score: 0.5 },
+    ] },
+    { source: "vector-semantic", candidates: [
+      { productId: "p2", source: "vector-semantic", score: 0.9 },
+      { productId: "p3", source: "vector-semantic", score: 0.8 },
+    ] },
+  ];
+  const fused = reciprocalRankFusion(sources, {
+    k: 60,
+    weights: { mysql: 0.1, "vector-semantic": 0.9 },
+  });
+  assert.equal(fused[0]?.productId, "p2");
+  assert.ok(fused.find((item) => item.productId === "p3")!.rrfScore >
+    fused.find((item) => item.productId === "p1")!.rrfScore);
+});
+
+test("Neo4j provider participates in MySQL-authoritative hybrid retrieval", async () => {
+  const catalog = new InMemoryCatalog([
+    makeProduct("p-graph", "Camp Stove", "Compact cooking stove"),
+    makeProduct("p-keyword", "Camping Tent", "Lightweight shelter"),
+  ]);
+  const graphProvider = new Neo4jGraphRetrievalProvider({
+    retrieveCandidates: async () => [
+      { productId: "p-graph", score: 0.9, sourceVersion: 1 },
+    ],
+  });
+  const search = new SearchService({ catalog, graphProvider, hybrid: true });
+  const result = await search.search({
+    query: "camp",
+    filters: {},
+    page: 1,
+    limit: 10,
+    freshnessMode: "strict",
+  });
+  assert.equal(result.items.length, 2);
+  assert.ok(result.strategy.includes("graph"));
+  assert.ok(result.items.some((item) => item.product.id === "p-graph"));
 });
 
 test("4. Candidate deduplication combines sources and retains highest version", () => {

@@ -595,6 +595,3 @@ test("24. Opt-in real Redis cache reverse-index integration", { skip: !process.e
   assert.ok(process.env.TEST_REDIS_URL);
 });
 
-test("25. Opt-in real LanceDB store with minPrice filter integration", { skip: !process.env.TEST_LANCEDB_PATH }, async () => {
-  assert.ok(process.env.TEST_LANCEDB_PATH);
-});

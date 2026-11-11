@@ -265,8 +265,8 @@ export class MySqlOutboxStore implements OutboxStore {
     const [rows] = await connection.query<RowDataPacket[]>(
       `SELECT
          SUM(status IN ('pending', 'processing')) AS active,
-         SUM(status = 'failed') AS failed,
-         SUM(status = 'dead_letter') AS dead,
+         SUM(d.status = 'failed') AS failed,
+         SUM(d.status = 'dead_letter') AS dead,
          SUM(status IN ('applied', 'skipped')) AS complete,
          COUNT(*) AS total
        FROM outbox_deliveries WHERE event_id = ?`,
@@ -291,10 +291,10 @@ export class MySqlOutboxStore implements OutboxStore {
   async getHealth(): Promise<OutboxHealth> {
     const [rows] = await this.pool.query<RowDataPacket[]>(
       `SELECT
-         SUM(status = 'pending' OR status = 'processing' OR status = 'failed') AS pending,
-         SUM(status = 'failed') AS failed,
-         SUM(status = 'dead_letter') AS dead_letter,
-         MIN(CASE WHEN status IN ('pending', 'processing', 'failed') THEN e.occurred_at END) AS oldest
+         SUM(d.status = 'pending' OR d.status = 'processing' OR d.status = 'failed') AS pending,
+         SUM(d.status = 'failed') AS failed,
+         SUM(d.status = 'dead_letter') AS dead_letter,
+         MIN(CASE WHEN d.status IN ('pending', 'processing', 'failed') THEN e.occurred_at END) AS oldest
        FROM outbox_deliveries d JOIN outbox_events e ON e.event_id = d.event_id`,
     );
     const row = rows[0];

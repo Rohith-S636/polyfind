@@ -121,7 +121,9 @@ export class FreshnessValidator {
       telemetry.checkedCandidates += 1;
       this.telemetry.checkedCandidates += 1;
       let product: Product | null = productMap.get(candidate.productId) ?? null;
-      if (!product && !this.authority.getProducts) {
+      if (!product) {
+        // Batch reads may omit deleted IDs or fail partially. Resolve each
+        // missing entry individually before classifying authority as unavailable.
         try {
           product = await this.authority.getProduct(candidate.productId);
         } catch {

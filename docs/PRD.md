@@ -1,76 +1,85 @@
-# PRD — PolyFind
+# Product Requirements Document — PolyFind
 
-> Status: draft for team review. Confirm open questions before treating scope as locked.
+**Status:** Approved academic scope; implementation acceptance is tracked separately in [13-phase master acceptance](13_PHASE_MASTER_ACCEPTANCE.md).  
+**Repository:** Rohith-S636/polyfind  
+**Scope baseline:** 2026-11-11
 
-## Goal
-Build a working search application and research prototype that coordinates relational, cache, graph, and vector retrieval while investigating whether freshness-aware adaptive decisions improve relevance, freshness correctness, latency, and resource use.
+## 1. Goal
 
-## Users
-- End users searching a product/catalog dataset using filters, natural language, or related entities.
-- Project evaluators assessing DBMS concepts, architecture, and experimental methodology.
-- Developers/researchers inspecting benchmark results and trade-offs.
+Build and evaluate a local-first academic product-search application that combines authoritative relational data with cache, graph, and vector retrieval. The system demonstrates how derived retrieval stores can improve candidate discovery while preserving MySQL authority for product identity, price, stock, and version.
 
-## Core features
-- Search a seeded catalogue using text queries and structured filters.
-- Store authoritative product facts in MySQL with constraints and transactional updates.
-- Use Redis for selected cacheable results or query signals, with documented invalidation/version behavior.
-- Use Neo4j to represent selected entity/product relationships and retrieve related candidates.
-- Use one vector database for semantic retrieval through a replaceable adapter.
-- Combine candidates from enabled retrieval paths and rank results using a documented baseline/fusion method.
-- Track versions/freshness metadata for derived representations.
-- Apply freshness rules to sensitive fields such as price and stock.
-- Provide a reproducible benchmark mode and export machine-readable results.
-- Present a simple Next.js interface for search and result inspection.
-- Document SQL features, data model, architecture, test evidence, and research limitations.
+This is an implementation and evaluation project, not a commercial marketplace and not a claim of novel foundation-model research.
 
-## Out of scope
-- Production-scale commercial marketplace or payment processing.
-- Live inventory or pricing integrations with third-party retailers.
-- Guaranteeing global strong consistency across all stores; the project will define explicit freshness contracts instead.
-- Training a new foundation model or claiming a novel embedding model.
-- Supporting multiple vector databases simultaneously in the first version; select one and keep the adapter boundary narrow.
-- Cloud deployment, paid APIs, or production SSO unless explicitly approved in a later decision.
+## 2. Users and roles
 
-## Success criteria
-- A new developer can start the local app using the README and `.env.example`, with no undocumented secret.
-- MySQL schema, constraints, and transactional update tests pass.
-- Search supports structured filtering and at least one semantic retrieval path.
-- Derived-store version/freshness behavior is observable and covered by automated tests.
-- Tests demonstrate that stale cache/index data cannot silently replace authoritative price/stock values.
-- The benchmark harness can replay a fixed query/update workload and emit results with configuration metadata.
-- Baselines and the proposed policy are compared under the same dataset and workload.
-- Report includes search-quality metrics, freshness violations, latency percentiles, resource/work counts, ablations, limitations, and repeatability details.
-- No novelty or performance claim is made without direct evidence.
+- **Public visitor:** browse and search the synthetic catalogue without an account.
+- **Customer:** register, sign in, and use customer-level account features; cannot mutate the shared catalogue.
+- **Administrator:** manage shared catalogue entities through authenticated, audited operations.
+- **Academic evaluator:** inspect database operations, retrieval behavior, test evidence, benchmarks, limitations, and design trade-offs.
+- **Maintainer:** run, test, seed, diagnose, and reproduce the project locally.
 
-## Open questions and decision tracking
+## 3. Functional requirements
 
-| # | Question | Owner | Decision Target / Date | Current Working Status |
-|---|---|---|---|---|
-| 1 | Which vector database and embedding model/provider will be selected? | Member B | Sprint 1 (`S1-05`) | Candidate spike evaluating local options; documented in ADR-003. |
-| 2 | Will authentication be required for the demo, or will it remain a single-user local prototype? | Member A | Sprint 1 (`S1-02`) | Confirmed: Single-user local prototype. Authentication is explicitly out of scope for v1. |
-| 3 | What is the final dataset and source/license? | Member B | Sprint 2 (`S2-02`) | Deterministic seed dataset and validation report with explicit provenance. |
-| 4 | What is the project deadline and expected sprint duration? | Member A | Sprint 1 milestone review | 6 sprints following the parallel plan in `docs/PARALLEL_WORK_PLAN.md`. |
-| 5 | What freshness SLA applies to each field class? | Member A | Sprint 1 (`S1-04` / ADR-002) | Zero staleness for transactional facts (price/stock); bounded eventual consistency for descriptive metadata. |
-| 6 | Which baselines are feasible after the literature audit? | Member A | Sprint 1 (`S1-02` / `docs/research.md`) | Feasible baselines identified: MySQL-only, Fixed multi-store, Fixed hybrid, and TTL-only cache. |
+1. Search products by text and structured filters (category, price range, stock, sort, pagination).
+2. Display product details and seller-specific offers, including price and availability; retain offer price history.
+3. Model categories, brands, products, sellers, variants, offers, users, sessions, audit events, versions, and outbox events.
+4. Support customer registration/login and administrator bootstrap/login.
+5. Enforce administrator-only catalogue mutations on the server; derive audit actor identity from the authenticated session, never from client-supplied actor IDs.
+6. Use MySQL as the authoritative store for catalogue facts and transactional state.
+7. Use Redis for cache-aside reads and invalidation; cache failure must degrade to authoritative reads.
+8. Use Neo4j for derived product/entity relationships and graph candidate retrieval.
+9. Use LanceDB for derived vector candidates. The default no-credential embedding path is deterministic local feature hashing; it is not a pretrained transformer.
+10. Combine MySQL, vector, and graph candidate lists using documented weighted fusion; hydrate and freshness-check final records against MySQL.
+11. Expose health/readiness and diagnostics that distinguish unavailable or degraded dependencies.
+12. Provide deterministic synthetic data generation, safe additive seeding, and repeatable local setup.
+13. Provide benchmark commands that preserve raw observations, environment/configuration metadata, and machine-readable summaries.
 
+## 4. Quality and academic requirements
 
+- Correctness: transactional writes, optimistic version checks, idempotent derived-store projection, tombstones, and freshness validation.
+- Security: password hashing, hashed session tokens, expiry/revocation, role enforcement, input validation, and login/bootstrap throttling.
+- Reliability: graceful startup/shutdown, dependency health checks, cache fallback, and explicit degraded states.
+- Reproducibility: fixed seeds, recorded hardware/runtime/configuration, raw benchmark samples, repeated runs, and documented limitations.
+- Evidence integrity: fixture data and provisional relevance judgments must not be described as independent empirical results. No performance, relevance, or novelty claim is accepted without a reproducible supporting artifact.
+- Maintainability: modular monolith, typed contracts, migrations, automated tests, CI, architecture decisions, and setup documentation.
 
----
+## 5. Approved architecture and constraints
 
-## Approved scope and implementation baseline (2026-11-11)
+- Next.js frontend with Node.js/TypeScript modular monolith.
+- MySQL is the sole authority for transactional catalogue and account facts.
+- Redis is the cache; Neo4j is the graph store; LanceDB is the vector store. Qdrant is excluded.
+- Weighted hybrid ranking uses configured source weights (MySQL 0.50, vector 0.35, graph 0.15 as the documented starting configuration); any tuned weights must be versioned and evaluated rather than silently changed.
+- Derived stores supply candidate IDs/scores only; final price, stock, identity, and version are re-read from MySQL.
+- Deterministic synthetic catalogue data is allowed and must be labelled synthetic. It is not a live Indian retailer feed.
+- Target spend is ₹0. The full academic demonstration must run locally with Docker and documented prerequisites. Public hosting is optional and must not be assumed to provide persistent free multi-store infrastructure.
+- Existing databases and volumes are protected. Implementation/CI must not migrate or mutate an existing user/deployed database. CI may migrate only its disposable service database.
 
-This addendum supersedes earlier draft statements that conflict with the decisions approved during implementation.
+## 6. Explicit non-goals
 
-### Locked decisions
-- Academic/personal project; commercial deployment is not the objective.
-- Target operating budget: ₹0. Use local Docker for the complete demonstration; do not assume a free hosting tier supplies persistent MySQL, Redis, Neo4j, and vector storage.
-- Modular monolith using Next.js, Node.js, and TypeScript.
-- MySQL is the authoritative source of truth.
-- Redis is the cache; Neo4j is the relationship store; LanceDB is the embedded vector store. Qdrant is excluded.
-- Synthetic deterministic catalogue data is acceptable for the academic demonstration, provided it is clearly labelled synthetic and includes categories, brands, sellers, variants, offers, and price history.
-- Public browsing/search is available without an account. Customer accounts may register/login. Only administrators may mutate the shared catalogue.
-- Search combines MySQL, vector, and graph candidates, applies weighted fusion, then hydrates and freshness-checks against MySQL.
-- Benchmarking must be reproducible and honest. Fixture values, mock measurements, and provisional relevance judgments must never be described as empirical deployment results.
+- Commercial marketplace operations, payments, orders, or customer checkout.
+- Live retailer scraping, live inventory feeds, or real retailer pricing claims.
+- Paid embedding/API dependencies or paid cloud services.
+- Multiple vector databases; the approved vector store is LanceDB.
+- Microservices, city-scale distributed deployment, or claims of global strong consistency.
+- Training a new foundation model or claiming the local feature-hashing vectorizer is transformer-level semantic understanding.
+- Mobile applications, product reviews, or social features.
 
-### Completion evidence
-The phase-by-phase acceptance criteria and current verified status are maintained in [13-phase master acceptance](13_PHASE_MASTER_ACCEPTANCE.md). A phase is complete only when its code, tests, documentation, and applicable integration evidence all pass. A green TypeScript build alone is insufficient.
+## 7. Acceptance and change control
+
+The 13-phase master acceptance record is authoritative for implementation status. A phase is complete only when its code/configuration, tests, documentation, and relevant end-to-end evidence pass. A source file, planned test, skipped integration, fixture benchmark, or green typecheck alone does not satisfy acceptance.
+
+The following earlier draft statements are superseded and are not open questions:
+- Authentication is in scope: public browsing plus customer registration/login and administrator-only shared catalogue mutation.
+- The vector store is LanceDB; Qdrant is excluded.
+- Local Docker is the complete required demonstration environment; public cloud deployment is optional.
+- The dataset is deterministic synthetic data with explicit provenance.
+- The retrieval strategy is weighted hybrid fusion with MySQL hydration/freshness validation.
+
+## 8. Risks and limitations to disclose
+
+- Synthetic data limits external validity.
+- Feature hashing is a lexical vector baseline, not a pretrained semantic model.
+- Relevance judgments require review and independent annotation before strong quality claims.
+- Benchmark results are environment-, seed-, workload-, and configuration-dependent.
+- Browser token storage and process-local throttling, if still present, must be disclosed as hardening limitations rather than described as production-grade security.
+- Free hosting may sleep, lose ephemeral state, or lack compatible persistent services; local Docker remains the reproducible demonstration path.

@@ -31,11 +31,21 @@ function makeProduct(
 const AUTH_SECRET = "test-phase10-auth-secret-xyz";
 
 function createTestAuth() {
+  let revoked = false;
   return {
     async authenticate(token: string) {
-      return token === AUTH_SECRET
+      return token === AUTH_SECRET && !revoked
         ? { id: "admin-test", email: "admin@example.test", roles: ["admin"] }
         : null;
+    },
+    async login(email: string) {
+      return { token: AUTH_SECRET, expiresAt: "2026-12-01T00:00:00.000Z", user: { id: "admin-test", email, roles: ["admin"] } };
+    },
+    async bootstrapAdmin(email: string) {
+      return { token: AUTH_SECRET, expiresAt: "2026-12-01T00:00:00.000Z", user: { id: "admin-test", email, roles: ["admin"] } };
+    },
+    async logout() {
+      revoked = true;
     },
   };
 }
@@ -685,6 +695,46 @@ test("18. Product catalogue POST and PUT routes authenticate and delegate versio
     const updatedJson = (await updated.json()) as any;
     assert.equal(updatedJson.item.name, "After");
     assert.equal(updatedJson.version, 2);
+  } finally {
+    await api.stop();
+  }
+});
+
+
+test("19. Session authentication exposes login, current principal, logout, and rejects revoked sessions", async () => {
+  const auth = createTestAuth();
+  const api = createApiServer({
+    catalog: new InMemoryCatalog([]),
+    relational: new InMemoryRelationalStore(),
+    auth,
+  });
+  const port = await api.start(0);
+  try {
+    const login = await fetch(`http://127.0.0.1:${port}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "admin@example.test", password: "test-password" }),
+    });
+    assert.equal(login.status, 200);
+    const session = (await login.json()) as any;
+    assert.equal(session.user.roles[0], "admin");
+
+    const me = await fetch(`http://127.0.0.1:${port}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${session.token}` },
+    });
+    assert.equal(me.status, 200);
+    assert.equal(((await me.json()) as any).user.id, "admin-test");
+
+    const logout = await fetch(`http://127.0.0.1:${port}/api/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.token}` },
+    });
+    assert.equal(logout.status, 200);
+
+    const revoked = await fetch(`http://127.0.0.1:${port}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${session.token}` },
+    });
+    assert.equal(revoked.status, 401);
   } finally {
     await api.stop();
   }

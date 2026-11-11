@@ -505,6 +505,7 @@ export class Neo4jGraphAdapter implements DerivedStoreSyncTarget {
          WITH c
          WHERE c.sourceSystem = 'polyfind'
          SET c.name = $categoryName
+         WITH c
          MATCH (p:Product {sourceId: $productId})
          MERGE (p)-[:IN_CATEGORY]->(c)`,
         {

@@ -68,6 +68,12 @@ test(".env.example documents the approved MySQL, Redis, Neo4j, and LanceDB setti
   assert.ok(!envExample.includes("VECTOR_STORE_URL"));
   assert.strictEqual(envExample.includes("sk-"), false);
   assert.strictEqual(envExample.includes("BEGIN PRIVATE KEY"), false);
+  assert.ok(envExample.includes("replace-with-random-local-password"));
+  assert.ok(envExample.includes("replace-with-random-neo4j-password"));
+  assert.strictEqual(envExample.includes("PolyFindNeo4j2026!"), false);
+  const compose = fs.readFileSync(path.join(repoRoot, "docker-compose.yml"), "utf-8");
+  assert.match(compose, /NEO4J_AUTH: \$\{NEO4J_AUTH:\?Set NEO4J_AUTH in \.env\}/);
+  assert.match(compose, /NEO4J_PASSWORD: \$\{NEO4J_PASSWORD:\?Set NEO4J_PASSWORD in \.env\}/);
 });
 
 test("docs/LOCAL_SETUP.md explains local configuration for all four stores and runtime requirements", () => {

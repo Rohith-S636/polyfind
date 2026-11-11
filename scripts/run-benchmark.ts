@@ -203,7 +203,8 @@ try {
       fusionWeights: { mysql: 0.5, vector: 0.35, graph: 0.15 },
       strategies: targets.map((target) => target.name),
       provisionalRelevanceEvaluation: relevance,
-      relevanceJudgments: "provisional hand-authored fixture labels; not independently reviewed research qrels",
+      relevanceJudgments: "manually checked against the deterministic seed-42 catalogue; not independently reviewed research qrels",
+      freshnessMetricDefinition: "freshnessViolationRate counts query responses whose freshness status is not verified. It measures stale or unverifiable derived-candidate signals, not stale transactional facts presented: strict mode rejects stale/unverifiable candidates, and all returned product fields are hydrated from MySQL.",
       notes: "Measured disposable CI benchmark. No production database was used. Workload and environment metadata are included in this artifact.",
     },
   }, null, 2), "utf8");

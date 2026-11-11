@@ -519,7 +519,7 @@ async function handle(
       const parsed = parseFilters(url);
       if (options.productList) {
         const result = await options.productList({
-          q: parsed.q,
+          ...(parsed.q === undefined ? {} : { q: parsed.q }),
           filters: parsed.filters,
           page: parsed.page,
           limit: parsed.limit,

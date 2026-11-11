@@ -13,3 +13,4 @@ export * from "./config/index.js";
 export * from "./ui/index.js";
 export * from "./cache/index.js";
 export * from "./api/index.js";
+export * from "./auth/session-auth.js";

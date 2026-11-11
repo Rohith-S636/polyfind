@@ -305,9 +305,14 @@ async function handle(
 ): Promise<void> {
   const origin = options.corsOrigin ?? "*";
   setSecurityHeaders(response, origin);
-  const clientKey = request.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
-    ?? request.socket.remoteAddress
-    ?? "unknown";
+  const requestOrigin = request.headers.origin;
+  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method ?? "GET");
+  if (isMutation && typeof requestOrigin === "string" && origin !== "*" && requestOrigin !== origin) {
+    sendJson(response, 403, { error: { code: "ORIGIN_REJECTED", message: "Cross-origin state-changing request rejected." } });
+    return;
+  }
+  // Do not trust a client-supplied X-Forwarded-For value for authentication throttling.
+  const clientKey = request.socket.remoteAddress ?? "unknown";
   const rateLimit = options.rateLimit;
   if (rateLimit) {
     const now = Date.now();
@@ -556,7 +561,7 @@ async function handle(
         }
         const session = await options.auth.registerCustomer(body["email"], body["password"]);
         authAttempts.delete(attemptKey);
-        sendJson(response, 201, session);
+        sendAuthSession(response, 201, session);
         return;
       }
 

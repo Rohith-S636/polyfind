@@ -45,6 +45,9 @@ function createTestAuth() {
     async login(email: string) {
       return { token: AUTH_SECRET, expiresAt: "2026-12-01T00:00:00.000Z", user: { id: "admin-test", email, roles: ["admin"] } };
     },
+    async registerCustomer(email: string) {
+      return { token: "customer-token", expiresAt: "2026-12-01T00:00:00.000Z", user: { id: "customer-test", email, roles: ["customer"] } };
+    },
     async bootstrapAdmin(email: string) {
       return { token: AUTH_SECRET, expiresAt: "2026-12-01T00:00:00.000Z", user: { id: "admin-test", email, roles: ["admin"] } };
     },
@@ -753,6 +756,21 @@ test("19. Session authentication exposes login, current principal, logout, and r
       headers: { Cookie: cookie },
     });
     assert.equal(revoked.status, 401);
+
+    const registration = await fetch(`http://127.0.0.1:${port}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "customer@example.test", password: "customer-password" }),
+    });
+    assert.equal(registration.status, 201);
+    const registrationBody = await registration.json() as any;
+    assert.equal(registrationBody.user.roles[0], "customer");
+    assert.equal("token" in registrationBody, false);
+    const customerCookie = registration.headers.get("set-cookie")?.split(";")[0];
+    assert.ok(customerCookie);
+    const customerMe = await fetch(`http://127.0.0.1:${port}/api/auth/me`, { headers: { Cookie: customerCookie } });
+    assert.equal(customerMe.status, 200);
+    assert.equal(((await customerMe.json()) as any).user.roles[0], "customer");
   } finally {
     await api.stop();
   }

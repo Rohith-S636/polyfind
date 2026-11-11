@@ -1,3 +1,5 @@
+> **Historical snapshot:** This report records the Phase 10/11 state at its stated implementation commit. It is superseded by subsequent 2026-11-11 changes on `main`, including customer self-registration, process-local authentication throttling, and HttpOnly SameSite browser session cookies. The current state and current CI evidence are tracked in [13-phase master acceptance](13_PHASE_MASTER_ACCEPTANCE.md).
+
 # POLYFIND — Phase 10 and Phase 11 Acceptance Audit
 
 **Audit date:** 2026-11-11  
@@ -85,7 +87,7 @@ Audit checks:
 - Catalogue mutation routes require the `admin` role. Public browsing and search remain available without an admin session.
 - Product, brand, seller, variant, and offer audit records derive actor identity from the authenticated principal, not request-body fields.
 - The shared `AUTH_SECRET`/API-key mechanism has been removed from runtime configuration and Docker Compose.
-- Bearer-token authentication is used rather than ambient cookies, avoiding cookie-based CSRF exposure. The client should keep the token in memory or an appropriate secure secret store and send it in the Authorization header.
+- Browser sessions now use an HttpOnly, SameSite=Strict cookie; bearer-token authentication remains supported for non-browser API clients. Customer self-registration is available and the one-time admin bootstrap remains independent of customer registration.
 - The bootstrap token should be removed from the deployment environment after the first administrator is created.
 
 ## Stage 6 — Independent Phase 11 security audit

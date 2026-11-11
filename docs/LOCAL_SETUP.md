@@ -1,112 +1,95 @@
-# Local Development & Environment Configuration Guide
+# PolyFind Local Setup
 
-This guide describes how to configure the local development environment for PolyFind across supported runtime versions and the heterogeneous database stores.
+This guide describes the supported local development and database demonstration path. The application is a Next.js + Node.js + TypeScript modular monolith. MySQL is authoritative; Redis, Neo4j, and LanceDB are derived services.
 
-## 1. Supported Runtime Versions
+## Requirements
 
-- **Node.js**: `v20.x` or `v22.x+` (LTS recommended)
-- **TypeScript**: `v5.8+`
-- **Operating Systems**: Linux, macOS, or Windows (WSL2 / PowerShell)
-- **Databases**:
-  - **MySQL**: 8.0+
-  - **Redis**: 7.0+
-  - **Neo4j**: 5.x Community or Enterprise
-  - **Vector Store**: Local embedded (LanceDB or Chroma)
+- Node.js 22+
+- npm 10+
+- Docker Desktop with WSL2 (recommended for the complete database stack)
+- TypeScript 5.8+ (installed by npm)
 
----
+## Environment configuration
 
-## 2. Environment Variables Specification
+Copy the committed example and replace every local password placeholder with your own local-only values:
 
-All application configuration is driven through environment variables. Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
+```powershell
+Copy-Item .env.example .env
 ```
 
-| Variable | Description | Example / Default | Required In |
-|---|---|---|---|
-| `NODE_ENV` | Runtime environment (`development`, `test`, `production`) | `development` | All |
-| `APP_URL` | Application base URL | `http://localhost:3000` | All |
-| `DATABASE_URL` | Authoritative MySQL connection URL | `mysql://polyfind:localpass@localhost:3306/polyfind` | Catalog, Migrations |
-| `REDIS_URL` | Redis connection URL | `redis://localhost:6379` | Cache adapter |
-| `NEO4J_URI` | Neo4j Bolt connection protocol URI | `bolt://localhost:7687` | Graph retrieval |
-| `NEO4J_USERNAME` | Neo4j database user | `neo4j` | Graph retrieval |
-| `NEO4J_PASSWORD` | Neo4j database password | (never commit) | Graph retrieval |
-| `NEO4J_DATABASE` | Neo4j database name | `neo4j` | Graph adapter |
-| `VECTOR_STORE_PROVIDER`| Selected vector store (`lancedb`, `chroma`, or `memory`) | `lancedb` | Semantic retrieval |
-| `VECTOR_STORE_URL` | URL or directory path for vector store persistence | `./data/vectors` | Semantic retrieval |
-| `EMBEDDING_PROVIDER` | Embedding provider (`mock`, `transformers`, `openai`) | `mock` | Semantic ingestion |
-| `EMBEDDING_MODEL` | Embedding model identifier | `all-MiniLM-L6-v2` | Semantic ingestion |
-| `AUTH_BOOTSTRAP_TOKEN` | One-time token for creating the first administrator; use 32+ random characters and remove it after bootstrap | (unset by default) | Initial admin setup only |
+Never commit `.env` or credentials. Main variables:
 
-> [!CAUTION]
-> Never commit `.env` or any file containing real passwords or API keys to version control. The `.gitignore` enforces this rule.
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | MySQL authoritative catalogue |
+| `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` | Local Compose credentials |
+| `REDIS_URL` | Redis cache |
+| `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`, `NEO4J_DATABASE` | Neo4j graph projection |
+| `LANCEDB_PATH`, `LANCEDB_TABLE` | Embedded LanceDB storage |
+| `POLYFIND_LOCAL_EMBEDDINGS` | Enables the deterministic no-key local feature-hashing vectorizer |
+| `EMBEDDING_ENDPOINT`, `EMBEDDING_MODEL`, `EMBEDDING_API_KEY` | Optional OpenAI-compatible embedding provider |
+| `AUTH_BOOTSTRAP_TOKEN` | One-time initial administrator bootstrap secret |
 
+The default local vectorizer is lexical feature hashing, not a pretrained semantic model. No embedding API key is needed for the local baseline.
 
-> **Authentication:** Live API writes require an administrator session. On a fresh database, set AUTH_BOOTSTRAP_TOKEN to a unique random value of at least 32 characters, then call POST /api/auth/bootstrap with the token, an administrator email, and a password of at least 12 characters. The endpoint is permanently closed once the first user exists. Remove the bootstrap token from the deployment environment after successful setup. Use POST /api/auth/login to obtain a short-lived bearer session and POST /api/auth/logout to revoke it.
----
+## Full local database stack
 
-## 3. Local Database Setup Instructions
+Start MySQL, Redis, and Neo4j:
 
-You can run each database natively or via standard Docker containers.
-
-### A. MySQL (Authoritative Relational Store)
 ```bash
-# Docker quickstart:
-docker run -d --name polyfind-mysql \
-  -e MYSQL_ROOT_PASSWORD=rootpass \
-  -e MYSQL_DATABASE=polyfind \
-  -e MYSQL_USER=polyfind \
-  -e MYSQL_PASSWORD=localpass \
-  -p 3306:3306 \
-  mysql:8.0
+docker compose up -d mysql redis neo4j
+```
 
-# Run migrations:
+Run migrations only against the database selected in your local `.env`:
+
+```bash
 npm run migrate
+npm run seed -- --seed=42 --count=50
 ```
 
-### B. Redis (Query Signals & Invalidation Cache)
-```bash
-# Docker quickstart:
-docker run -d --name polyfind-redis \
-  -p 6379:6379 \
-  redis:7-alpine
+The seed is additive and creates missing synthetic products, sellers, variants, and offers. It does not overwrite existing product prices, stock, or versions. Do not point it at a production database.
 
-# Test connection:
-redis-cli -h localhost -p 6379 ping
-# Response should be PONG
+Start the full application stack:
+
+```bash
+docker compose up --build app
 ```
 
-### C. Neo4j (Entity Relationship Graph)
-```bash
-# Docker quickstart:
-docker run -d --name polyfind-neo4j \
-  -e NEO4J_AUTH=neo4j/localgraphpass \
-  -p 7474:7474 -p 7687:7687 \
-  neo4j:5-community
+LanceDB runs embedded in the app and persists at `/app/data/lancedb` through a named Compose volume. Do not delete named volumes to troubleshoot; back up data before intentional changes.
 
-# Cypher Browser accessible at: http://localhost:7474
+## Run only the application in demo mode
+
+```bash
+npm ci
+npm run dev
 ```
 
-### D. Vector Store (LanceDB / Local Embedded)
-- By default, `lancedb` operates in-process with files persisted locally under `data/vectors/` (ignored by git).
-- No external container is required for local embedded operation.
+Demo mode uses a deterministic in-memory product catalogue. It is useful for frontend development but does not prove MySQL or external derived-store integration.
 
----
-
-## 4. Verification and Health Check
-
-Run the test suite to verify configuration contracts and technology-neutral boundaries:
+## Verification
 
 ```bash
-npm install
-npm test
 npm run typecheck
+npm run typecheck:scripts
+npm test
+npm run build
 ```
 
-For a deterministic browser demo, set `CATALOG_MODE=demo` and run
-`npm run dev`. This mode is explicit and uses the seed-42 in-memory catalogue.
-For a live local run, set `CATALOG_MODE=live`, configure a reachable
-`DATABASE_URL`, run `npm run migrate` and `npm run seed -- --seed=42 --count=50`,
-then use `npm run start`. Live startup fails instead of substituting demo data
-when MySQL is unavailable.
+GitHub Actions runs disposable MySQL, Redis, and Neo4j services and tests LanceDB persistence on a temporary filesystem path. Use the latest workflow run for the current pass/fail result.
+
+## Authentication
+
+- Public browsing and search are anonymous.
+- Customers register at `/register` and sign in at `/login`.
+- The first administrator is created once using `AUTH_BOOTSTRAP_TOKEN` and a password of at least 12 characters.
+- Remove the bootstrap token after first-admin creation.
+- The API sets an HttpOnly, SameSite=Strict session cookie for browser use and continues to accept bearer tokens for API clients.
+- Catalogue mutation endpoints require the administrator role.
+
+## Local URLs
+
+- Web: `http://localhost:3000`
+- API: `http://127.0.0.1:3001`
+- Neo4j browser: `http://localhost:7474`
+- MySQL: `localhost:3306`
+- Redis: `localhost:6379`

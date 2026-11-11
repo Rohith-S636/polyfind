@@ -159,3 +159,22 @@ The repository has previously been connected to a Render service, but a current 
 - PR Title: `[<slice-id>] <summary>`. PRs must list Acceptance criteria checked, commands/tests run, evidence, and limitations. Issue-to-slice traceability is required for every task and pull request.
 - Every task links to one slice and has one directly responsible owner.
 - Never commit `.env`, credentials, generated datasets, or benchmark output directories.
+
+
+## Active sprint and slice status
+
+- Active Sprint: [Sprint 1 — Research and foundation](docs/sprints/sprint-01.md)
+- `S1-01` — [Repository and contributor workflow](docs/slices/s1-01-repository-and-contributor-workflow.md) (Member A)
+- `S1-02` — [Requirements and research-gap review](docs/slices/s1-02-requirements-and-research-gap-review.md) (Member A)
+- `S1-03` — [Local development configuration](docs/slices/s1-03-local-development-configuration.md) (Member B)
+- `S1-04` — [Architecture contracts and module skeleton](docs/slices/s1-04-architecture-contracts-and-module-skeleton.md) (Member A)
+- `S1-05` — [Vector-store and embedding spike](docs/slices/s1-05-vector-store-and-embedding-spike.md) (Member B)
+
+### Branch, commit, and pull-request conventions
+
+- Feature branch: `feature/<slice-id>-<short-description>`.
+- Fix branch: `fix/<slice-id>-<short-description>`.
+- Commit title: `[<slice-id>] <imperative summary>`.
+- PR Title: `[<slice-id>] <summary>`.
+- Acceptance criteria checked, test commands, evidence, and limitations must be listed in each PR.
+- Issue-to-slice traceability is required for every task and PR.

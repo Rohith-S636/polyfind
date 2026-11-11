@@ -2,116 +2,69 @@
 
 ## One-minute project summary
 
-PolyFind is a local-first research prototype for search across heterogeneous
-stores. MySQL owns transactional product facts, while Redis, Neo4j, and vector
-retrieval supply derived candidates. A planner chooses retrieval paths from
-query class, configured cost, and freshness constraints; fusion is
-deterministic; authoritative fields are revalidated before presentation.
+PolyFind is an academic product-discovery application built as a Next.js and TypeScript modular monolith. MySQL owns transactional product facts, versions, user roles, offers, and price history. Redis caches selected reads; Neo4j supplies relationship-derived candidates; LanceDB stores vector representations. The search path combines available candidates with weighted reciprocal-rank fusion and then rehydrates/freshness-checks authoritative fields from MySQL.
 
-The contribution is an evidence-bounded architecture and evaluation, not a
-claim that PolyFind invented adaptive retrieval or guarantees global strong
-consistency.
+The catalogue is deterministic synthetic data. The default vectorizer is local feature hashing, not MiniLM or another pretrained language model. The project demonstrates database integration and correctness boundaries; it does not claim live retailer coverage or proven production-scale performance.
 
 ## Architecture decisions to explain
 
 | Decision | Why it was made | Trade-off / evidence |
 |---|---|---|
-| MySQL is authoritative for price, stock, identity, and version. | Transactional correctness must not depend on lagging indexes or caches. | Validation and fallback add work; stale derived values cannot silently win. See [ADR-001](./decisions/ADR-001-mysql-authority.md). |
-| Derived records carry source/version metadata. | The planner needs an explicit freshness signal rather than treating TTL as correctness. | Missing metadata is unverifiable and causes fallback/degraded behavior. See [ADR-002](./decisions/ADR-002-freshness-contract.md). |
-| Retrieval providers expose stable candidate IDs, source, score, and diagnostics. | Fusion can remain backend-independent and deterministic. | Candidate ranking is not a replacement for domain-specific relevance evaluation. See [ADR-004](./decisions/ADR-004-deterministic-candidate-fusion.md). |
-| Fixed and adaptive routing are both implemented. | A proposal needs comparable baselines under the same workload. | Configured costs and query classification are prototype assumptions. See [ADR-006](./decisions/ADR-006-planner-routing-baselines.md). |
-| Repeated-run summaries preserve raw observations. | Mean, p50, p95, p99, variance, and confidence intervals need reproducible inputs. | Current intervals are descriptive normal approximations, not significance tests. See [ADR-008](./decisions/ADR-008-repeated-benchmark-summaries.md). |
-
-## Heterogeneous-store trade-offs
-
-- **MySQL:** strongest authority and structured filtering; weaker for semantic
-  vocabulary mismatch and multi-hop relationship traversal.
-- **Redis:** low-latency cache/query signals; invalidation and version
-  verification are required because TTL alone permits stale reads.
-- **Neo4j:** relationship traversal and associative candidates; synchronization
-  lag and graph dispatch cost make unconditional use wasteful.
-- **Vector store:** semantic matching; embedding/index freshness and model
-  assumptions affect relevance, and it cannot authoritatively supply price or
-  stock.
-- **Fusion/planner:** improves coverage and can reduce unnecessary dispatches;
-  it adds classification, validation, telemetry, and failure-handling paths.
+| MySQL is authoritative for product price, stock, identity, and version. | Transactional correctness must not depend on lagging derived stores. | Candidate validation adds work; stale derived values cannot override MySQL. |
+| Redis is a cache, not an authority. | Cache invalidation and version checks accelerate reads while preserving fallback. | Cache outages reduce performance but should not change authoritative values. |
+| Neo4j is a derived graph projection. | Category relationships can broaden candidate discovery. | Projection lag and graph dispatch cost must be measured; current provider uses text matches and one-hop category neighbours. |
+| LanceDB is embedded and persistent. | Local operation avoids an additional hosted vector service. | The default feature-hashing vectorizer is lexical similarity, not transformer semantics. |
+| Fusion is weighted reciprocal-rank fusion. | It combines heterogeneous candidate lists without assuming raw scores are calibrated. | Default weights (MySQL 0.50, vector 0.35, graph 0.15) are explicit starting values, not experimentally optimized. |
+| MySQL remains the final hydrator. | Derived candidate sources never supply authoritative price or stock. | Strict freshness checks can add latency or reject unverifiable candidates. |
 
 ## Freshness contract defense
 
-1. A product update commits in MySQL and increments its version.
-2. A derived candidate reports its source version when available.
-3. The freshness validator compares source and authoritative versions.
-4. Equal versions are fresh; older, newer, missing, or unverifiable versions
-   are not silently accepted in strict mode.
-5. Price and stock are read from MySQL even when a derived store supplied the
-   candidate ID.
-6. A stale/unavailable derived store causes an explicit fallback, rejection, or
-   degraded response, with violation telemetry.
+1. A product or offer update commits to MySQL with an incremented version.
+2. A transactional outbox event records the change.
+3. Redis, Neo4j, and LanceDB consume derived updates idempotently and version-aware.
+4. A search candidate is hydrated from MySQL and checked against the authoritative version.
+5. Stale, deleted, or unverifiable candidates are rejected or cause fallback in strict mode.
+6. Prices and stock shown to users come from MySQL, not from a derived index.
 
-This protects the tested transactional fields; it does not claim global strong
-consistency for descriptive metadata or unavailable authorities.
+This protects the tested path; it is not a universal strong-consistency guarantee for every field or every distributed failure mode.
 
-## Benchmark and baseline talking points
+## Benchmark and evidence talking points
 
-The canonical fixture compares MySQL-only, fixed multi-store, TTL-only cache,
-fixed hybrid, and PolyFind Adaptive on the same seeded workload. It records
-PolyFind Adaptive at NDCG@10 `0.880`, p95 `2.90 ms`, `1.30` dispatches/query,
-and `0.0%` freshness violations; TTL-only records `18.5%` violations. These
-are measurements of the committed fixture, not universal performance claims.
+The committed baseline comparison is a fixture for regression and visualization tests. It contains provisional relevance labels and fixture environment data. It is not a measured production experiment. Do not quote its NDCG, p95, dispatch-count, or freshness values as empirical findings.
 
-The important trade-offs are:
-
-- TTL-only is faster in the fixture but can serve stale transactional data.
-- Fixed multi-store provides broad candidate coverage but dispatches to all
-  four stores.
-- Disabling freshness validation records `24.0%` violations in the ablation.
-- Disabling vector retrieval records a `52.3%` relevance drop in the recorded
-  semantic workload.
+A defensible benchmark must include the exact commit, environment snapshot, seed, dataset size, workload mix, update regime, repeated runs, raw observations, reviewed relevance judgments, and analysis output. Report p50/p95, variation/confidence intervals, freshness violation counts, and per-store dispatches. Include failures and negative results.
 
 ## Limitations to volunteer before being asked
 
-- Ten provisional hand-authored relevance queries do not represent production
-  traffic and lack independent inter-annotator agreement.
-- The catalog and services are evaluated locally and at capstone scale, not
-  across distributed nodes, partitions, or production traffic.
-- Cost estimates, latency budgets, seeds, cache state, and update regimes are
-  configuration-sensitive.
-- The repeated-run confidence intervals are descriptive normal approximations;
-  no power analysis or significance test is presented.
-- The related-work matrix is targeted rather than exhaustive.
-- Generated `results/` output is ignored; the committed fixture makes tests
-  reproducible but is not a substitute for every independent rerun.
+- The catalogue is synthetic, not a licensed Indian retailer dataset.
+- The local feature-hashing vectorizer is lexical; it does not understand synonyms or intent like a pretrained language model.
+- The relevance qrels are provisional until independently reviewed.
+- Default fusion weights are not optimized.
+- Login throttling is process-local; horizontally scaled production requires a shared limiter.
+- Browser authentication uses HttpOnly, SameSite cookies, but deployment still needs a tested Origin/CSRF policy and secure configuration.
+- Public hosting is not certified until the deployed SHA and all database dependencies are smoke-tested.
+- The current benchmark fixture is not evidence of production latency or search-quality superiority.
 
 ## Likely questions and concise answers
 
-**Why not make Redis, Neo4j, or vector retrieval authoritative?**  
-They are derived representations optimized for access patterns different from
-transactional updates. MySQL remains the authority so stale candidates cannot
-override price or stock.
+**Why not make Redis, Neo4j, or LanceDB authoritative?**  
+They are optimized derived representations and can lag behind writes. MySQL remains the authority so candidate indexes cannot override transactional values.
 
 **Why is TTL insufficient?**  
-TTL measures elapsed time, not whether a particular entity changed. Version
-comparison detects divergence directly and can bypass the derived result.
+TTL measures age, not whether an entity changed. Version comparison detects divergence directly.
 
-**Is PolyFind guaranteed to have zero stale reads?**  
-Only the tested strict validation path and fields are covered by the evidence.
-Unavailable or unverifiable authorities require fallback/degraded behavior; the
-project does not claim a universal deployment guarantee.
+**Is the vector search semantic?**  
+The no-key default is a deterministic feature-hashing vectorizer that supports lexical vector similarity. It is not a pretrained transformer. A configured external embedding provider can be used, but its cost, availability, and model must be recorded.
+
+**What does weighted ranking mean?**  
+The current implementation uses weighted reciprocal-rank contributions with MySQL 0.50, vector 0.35, and graph 0.15 defaults. The values are explicit engineering defaults, not learned or empirically optimized.
 
 **What is the research claim?**  
-The defensible claim is that this prototype demonstrates a reproducible policy
-for combining query-aware routing with freshness validation and deterministic
-fusion. Broader superiority or novelty requires larger, independently reviewed
-experiments.
+The defensible claim is that the application demonstrates a testable MySQL-authoritative architecture with derived cache, graph, and vector candidates, freshness validation, and role-restricted writes. Performance or novelty claims require independent experiments and literature review.
 
 **What would you do next?**  
-Use production-shaped workloads, independent relevance annotators, distributed
-deployments, more repetitions and statistical testing, and compare against a
-broader verified literature set.
+Run repeated experiments with reviewed qrels, larger workloads, a pretrained local embedding model if hardware permits, distributed services, and shared rate limiting.
 
 ## Demo order
 
-Follow [`DEMO_SCRIPT.md`](./DEMO_SCRIPT.md): clean verification, structured
-authority, semantic/graph retrieval, stale-update fallback, then benchmark
-trade-offs. Keep the [final report](./FINAL_REPORT.md) and
-[acceptance checklist](./ACCEPTANCE_CHECKLIST.md) open as evidence references.
+Follow [DEMO_SCRIPT.md](./DEMO_SCRIPT.md): verify the environment, show public search, compare seller offers and history, demonstrate customer/admin access, explain multi-store retrieval and freshness, then present actual CI evidence and limitations. Keep the [final report](./FINAL_REPORT.md) and [acceptance checklist](./ACCEPTANCE_CHECKLIST.md) open.

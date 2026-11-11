@@ -34,7 +34,7 @@ Open a product with seeded offers. Compare seller prices and availability. Show 
 Register a customer account and sign in. Explain that customer role cannot mutate catalogue data. Sign out and sign in as the administrator. Open `/admin`; create a product, seller, brand, variant, and offer. Show that the UI calls protected APIs and audit actor identity comes from the authenticated session.
 
 ## 10:00–12:00 — Multi-store retrieval and freshness
-Show health diagnostics and explain the three candidate sources. Describe the default weighted reciprocal-rank contributions (MySQL 0.50, vector 0.35, graph 0.15). Be precise: the no-key local vectorizer is deterministic feature hashing, not a pretrained semantic model. Demonstrate the outbox and version/freshness safeguards from the integration test evidence.
+Show health diagnostics and explain the three candidate sources. Describe the default weighted reciprocal-rank contributions (MySQL 0.50, vector 0.35, graph 0.15). Be precise: the no-key local vectorizer is deterministic feature-hashing, not a pretrained semantic model. Demonstrate the outbox and version/freshness safeguards from the integration test evidence.
 
 ## 12:00–13:30 — Database and correctness evidence
 Show the latest passing GitHub Actions run. Point out the disposable MySQL integration, Redis cache integration, Neo4j projection integration, and LanceDB persistence integration. If any integration step is skipped or failed, state that plainly; do not present it as passed.

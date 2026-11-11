@@ -42,7 +42,8 @@ A defensible benchmark must include the exact commit, environment snapshot, seed
 
 - The catalogue is synthetic, not a licensed Indian retailer dataset.
 - The local feature-hashing vectorizer is lexical; it does not understand synonyms or intent like a pretrained language model.
-- The relevance qrels are manually checked against seed 42 but still provisional until independently reviewed.\n- The measured hybrid workload has a 43.18% non-verified derived-candidate response signal; strict mode rejects stale candidates, but this indicates index lag under updates.
+- The relevance qrels are manually checked against seed 42 but still provisional until independently reviewed.
+- The measured hybrid workload has a 43.18% non-verified derived-candidate response signal; strict mode rejects stale candidates, but this indicates index lag under updates.
 - Default fusion weights are not optimized.
 - Login throttling is process-local; horizontally scaled production requires a shared limiter.
 - Browser authentication uses an HttpOnly, SameSite=Strict cookie (Secure in production); deployment still needs a verified allowed-Origin/CSRF policy and secure HTTPS configuration.

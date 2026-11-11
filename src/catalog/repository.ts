@@ -1,4 +1,4 @@
-import type { Pool, RowDataPacket } from "mysql2/promise";
+import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import type { CatalogReader, Category, Product, ProductFilters } from "../contracts/types.js";
 import {
   CatalogValidationError,
@@ -32,9 +32,11 @@ export interface CreateProductInput {
   price: number;
   stock: number;
   version?: number;
+  actorUserId?: string;
 }
 
 export interface UpdateProductInput {
+  actorUserId?: string;
   name?: string;
   description?: string;
   categoryId?: string;
@@ -93,6 +95,26 @@ export function mapRowToProduct(row: ProductRow): Product {
   if (row.product_url !== null) product.productUrl = row.product_url;
   if (row.data_source !== null && row.data_source !== undefined) product.dataSource = row.data_source;
   return product;
+}
+
+async function writeProductAudit(
+  connection: PoolConnection,
+  actorUserId: string | undefined,
+  action: string,
+  productId: string,
+  beforeData: unknown,
+  afterData: unknown,
+): Promise<void> {
+  await connection.query(
+    "INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, before_data, after_data) VALUES (?, ?, 'product', ?, ?, ?)",
+    [
+      actorUserId ?? null,
+      action,
+      productId,
+      beforeData === null ? null : JSON.stringify(beforeData),
+      afterData === null ? null : JSON.stringify(afterData),
+    ],
+  );
 }
 
 export class CatalogRepository {
@@ -350,6 +372,7 @@ export class CatalogRepository {
       }
       const product = mapRowToProduct(created);
       await writeOutboxRecord(connection, createProductOutboxEvent(product, "created"));
+      await writeProductAudit(connection, input.actorUserId, "product.created", product.id, null, product);
       await connection.commit();
       await this.cache?.invalidateProduct(product.id);
       await this.cache?.invalidateListings();
@@ -428,7 +451,7 @@ export class CatalogRepository {
 
       // Lock row to verify current existence and version
       const [existingRows] = await connection.query<ProductRow[]>(
-        "SELECT id, version FROM products WHERE id = ? FOR UPDATE",
+        "SELECT id, name, description, category_id, price, currency, stock, availability, brand, attributes, image_url, product_url, data_source, version, updated_at FROM products WHERE id = ? FOR UPDATE",
         [id],
       );
 
@@ -437,6 +460,7 @@ export class CatalogRepository {
         throw new NotFoundError("Product", id);
       }
 
+      const beforeProduct = mapRowToProduct(existing);
       const currentVersion = Number(existing.version);
       if (expectedVersion !== undefined && currentVersion !== expectedVersion) {
         throw new VersionConflictError(id, expectedVersion, currentVersion);
@@ -471,6 +495,7 @@ export class CatalogRepository {
 
       const product = mapRowToProduct(updated);
       await writeOutboxRecord(connection, createProductOutboxEvent(product, "updated"));
+      await writeProductAudit(connection, patch.actorUserId, "product.updated", product.id, beforeProduct, product);
 
       await connection.commit();
       await this.cache?.invalidateProduct(product.id);

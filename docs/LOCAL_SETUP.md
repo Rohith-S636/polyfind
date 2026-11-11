@@ -17,7 +17,9 @@ Copy the committed example and replace every local password placeholder with you
 Copy-Item .env.example .env
 ```
 
-Never commit `.env` or credentials. Main variables:
+Never commit `.env` or credentials. Generate distinct local passwords and keep `NEO4J_AUTH` in `username/password` form with the same password as `NEO4J_PASSWORD`. If a Neo4j Docker volume already exists, retain the password that was used when that volume was initialized; changing the environment value does not rotate credentials inside an existing database. This setup does not modify or reset existing volumes.
+
+Main variables:
 
 | Variable | Purpose |
 |---|---|

@@ -94,3 +94,43 @@ jobs:
           path: artifacts/polyfind-benchmark-*.json
           if-no-files-found: error
       - run: npm run build
+  docker-stack:
+    name: Docker Compose stack smoke test
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create disposable Compose environment
+        run: |
+          cat > .env <<'EOF'
+          MYSQL_PASSWORD=ci-polyfind-password
+          MYSQL_ROOT_PASSWORD=ci-polyfind-root-password
+          NEO4J_AUTH=neo4j/ci-polyfind-neo4j
+          NEO4J_PASSWORD=ci-polyfind-neo4j
+          AUTH_BOOTSTRAP_TOKEN=ci-polyfind-bootstrap-token-with-more-than-32-characters
+          CORS_ORIGIN=http://localhost:3000
+          EOF
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+      - name: Build production application image
+        run: docker compose build app
+      - name: Start disposable database services
+        run: docker compose up -d --wait mysql redis neo4j
+      - name: Migrate and seed the disposable Compose database
+        run: |
+          docker compose run --rm --no-deps app npm run migrate
+          docker compose run --rm --no-deps app npm run seed -- --seed=42 --count=50
+      - name: Start application and wait for readiness
+        run: docker compose up -d --wait app
+      - name: Smoke test browser UI and API through the Next.js proxy
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/ready
+          curl --fail --silent --show-error http://127.0.0.1:3000/ > /dev/null
+          node -e "fetch('http://127.0.0.1:3000/api/products').then(async r => { const body = await r.json(); if (!r.ok || Number(body.total) < 50) throw new Error('Expected at least 50 seeded products; received ' + body.total); console.log('Docker UI/API smoke test passed with ' + body.total + ' products.'); }).catch(error => { console.error(error); process.exitCode = 1; });"
+      - name: Collect Compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Stop and remove only this CI job's disposable Compose volumes
+        if: always()
+        run: docker compose down -v --remove-orphans

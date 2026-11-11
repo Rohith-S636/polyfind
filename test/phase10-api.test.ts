@@ -634,3 +634,48 @@ test("17. GET /api/brands and product variants expose persisted catalogue metada
     await api.stop();
   }
 });
+
+
+test("18. Product catalogue POST and PUT routes authenticate and delegate versioned writes", async () => {
+  const original = makeProduct("prod-write", "Before", "Before update", 10, 1);
+  const api = createApiServer({
+    catalog: new InMemoryCatalog([original]),
+    relational: new InMemoryRelationalStore(),
+    authSecret: AUTH_SECRET,
+    createProduct: async (input) => makeProduct(input.id, input.name, input.description, input.price, 1, input.categoryId, input.stock),
+    updateProduct: async (id, patch, expectedVersion) => {
+      assert.equal(id, original.id);
+      assert.equal(expectedVersion, 1);
+      return { ...original, ...patch, version: 2, updatedAt: new Date().toISOString() };
+    },
+  });
+  const port = await api.start(0);
+  try {
+    const denied = await fetch(`http://127.0.0.1:${port}/api/products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "prod-new", name: "New", description: "New", categoryId: "cat-gear", price: 5, stock: 2 }),
+    });
+    assert.equal(denied.status, 401);
+
+    const created = await fetch(`http://127.0.0.1:${port}/api/products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${AUTH_SECRET}` },
+      body: JSON.stringify({ id: "prod-new", name: "New", description: "New", categoryId: "cat-gear", price: 5, stock: 2 }),
+    });
+    assert.equal(created.status, 201);
+    assert.equal(((await created.json()) as any).item.id, "prod-new");
+
+    const updated = await fetch(`http://127.0.0.1:${port}/api/products/prod-write`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${AUTH_SECRET}` },
+      body: JSON.stringify({ name: "After", expectedVersion: 1 }),
+    });
+    assert.equal(updated.status, 200);
+    const updatedJson = (await updated.json()) as any;
+    assert.equal(updatedJson.item.name, "After");
+    assert.equal(updatedJson.version, 2);
+  } finally {
+    await api.stop();
+  }
+});

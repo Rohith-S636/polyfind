@@ -7,6 +7,7 @@ import {
   createDatabasePool,
   parseDatabaseUrl,
   runMigrations,
+  SessionAuthService,
 } from "../src/index.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -135,6 +136,26 @@ test("MySQL integration: migrations, catalogue transactions, optimistic locking,
       [`rollback-${suffix}`],
     );
     assert.equal(Number((rollbackRows as Array<{ total: number }>)[0]?.total ?? 0), 0);
+
+    const auth = new SessionAuthService(pool, "disposable-ci-bootstrap-token-with-32-plus-characters");
+    const bootstrapped = await auth.bootstrapAdmin(
+      `admin-${suffix}@example.test`,
+      "correct-horse-battery-staple-2026",
+      "disposable-ci-bootstrap-token-with-32-plus-characters",
+    );
+    assert.ok(bootstrapped.token.length >= 40);
+    const authenticated = await auth.authenticate(bootstrapped.token);
+    assert.equal(authenticated?.id, bootstrapped.user.id);
+    assert.deepEqual(authenticated?.roles, ["admin"]);
+
+    const loggedIn = await auth.login(`admin-${suffix}@example.test`, "correct-horse-battery-staple-2026");
+    assert.equal((await auth.authenticate(loggedIn.token))?.email, `admin-${suffix}@example.test`);
+    await auth.logout(bootstrapped.token);
+    assert.equal(await auth.authenticate(bootstrapped.token), null);
+    await assert.rejects(
+      auth.bootstrapAdmin(`second-${suffix}@example.test`, "another-secure-password-2026", "disposable-ci-bootstrap-token-with-32-plus-characters"),
+      /already been completed/i,
+    );
   } finally {
     await pool.end();
   }

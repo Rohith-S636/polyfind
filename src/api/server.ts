@@ -18,6 +18,8 @@ import {
   type ListOffersOptions,
   type ListPriceHistoryOptions,
   type SellerStatus,
+  type ListProductsOptions,
+  type PaginatedProducts,
 } from "../catalog/index.js";
 import { SearchService } from "./search.js";
 import type { RedisConnectionStatus } from "../cache/redis-adapter.js";
@@ -29,6 +31,7 @@ const MAX_LIMIT = 100;
 export interface ApiServerOptions {
   catalog: CatalogReader;
   relational?: RelationalStore | undefined;
+  productList?: ((options: ListProductsOptions) => Promise<PaginatedProducts>) | undefined;
   search?: SearchService | undefined;
   authSecret?: string | undefined;
   dependencyStatus?: Record<string, "available" | "not-configured" | "unavailable"> | undefined;
@@ -514,6 +517,24 @@ async function handle(
 
     if (url.pathname === "/api/products") {
       const parsed = parseFilters(url);
+      if (options.productList) {
+        const result = await options.productList({
+          q: parsed.q,
+          filters: parsed.filters,
+          page: parsed.page,
+          limit: parsed.limit,
+          sort: parsed.sort as "relevance" | "name" | "price" | "updatedAt",
+        });
+        sendJson(response, 200, {
+          items: result.items,
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: Math.max(1, Math.ceil(result.total / result.limit)),
+          sort: parsed.sort,
+        });
+        return;
+      }
       const all = (await options.catalog.listProducts(parsed.filters, 1, 100)).items;
       const query = parsed.q?.trim().toLocaleLowerCase();
       const filtered = all.filter((product) =>

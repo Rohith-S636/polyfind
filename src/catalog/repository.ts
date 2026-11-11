@@ -14,6 +14,7 @@ export interface ListProductsOptions {
   filters?: ProductFilters;
   page?: number;
   limit?: number;
+  sort?: "relevance" | "name" | "price" | "updatedAt";
 }
 
 export interface PaginatedProducts {
@@ -253,11 +254,18 @@ export class CatalogRepository {
       const [countRows] = await this.pool.query<RowDataPacket[]>(countSql, params);
       const total = Number(countRows[0]?.["total"] ?? 0);
 
+      const orderBy = options.sort === "name"
+        ? "name ASC, id ASC"
+        : options.sort === "price"
+          ? "price ASC, id ASC"
+          : options.sort === "updatedAt"
+            ? "updated_at DESC, id ASC"
+            : "id ASC";
       const itemsSql = `
         SELECT id, name, description, category_id, price, currency, stock, availability, brand, attributes, image_url, product_url, data_source, version, updated_at
         FROM products
         ${whereSql}
-        ORDER BY id ASC
+        ORDER BY ${orderBy}
         LIMIT ? OFFSET ?
       `;
       const [itemsRows] = await this.pool.query<ProductRow[]>(itemsSql, [...params, limit, offset]);

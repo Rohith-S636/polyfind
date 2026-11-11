@@ -44,9 +44,15 @@ jobs:
           --health-timeout=5s
           --health-retries=12
     env:
-      TEST_DATABASE_URL: mysql://polyfind_test:polyfind_test_password@127.0.0.1:3306/polyfind_test
+      # Integration tests use an isolated disposable database; benchmark seeding uses polyfind_test only.
+      TEST_DATABASE_URL: mysql://polyfind_test:polyfind_test_password@127.0.0.1:3306/polyfind_integration_test
+      POLYFIND_TEST_DATABASE_URL: mysql://polyfind_test:polyfind_test_password@127.0.0.1:3306/polyfind_integration_test
+      TEST_REDIS_URL: redis://127.0.0.1:6379
       DATABASE_URL: mysql://polyfind_test:polyfind_test_password@127.0.0.1:3306/polyfind_test
       CATALOG_MODE: live
+      CI_MYSQL_ROOT_PASSWORD: polyfind_root_password
+      CI_MYSQL_APP_USER: polyfind_test
+      CI_MYSQL_INTEGRATION_DATABASE: polyfind_integration_test
       REDIS_URL: redis://127.0.0.1:6379
       NEO4J_URI: bolt://127.0.0.1:7687
       NEO4J_USERNAME: neo4j
@@ -70,6 +76,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare isolated disposable MySQL integration database
+        run: npm run prepare:ci-db
       - run: npm run typecheck
       - run: npm run typecheck:scripts
       - run: npm test

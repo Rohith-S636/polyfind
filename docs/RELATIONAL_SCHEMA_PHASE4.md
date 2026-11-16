@@ -1,7 +1,7 @@
 # PolyFind Phase 4 Relational Foundation
 
 This document describes the executable schema in `migrations/001_initial_schema.sql`
-through `migrations/004_relational_foundation.sql`. MySQL is the authoritative
+through `migrations/005_outbox_delivery_leases.sql`. MySQL is the authoritative
 store for catalogue, offer, identity, audit, and synchronization-queue data.
 
 ## Implemented migrations
@@ -12,6 +12,7 @@ store for catalogue, offer, identity, audit, and synchronization-queue data.
 | `002_catalog_indexes.sql` | Product category/price, stock, update-time, and FULLTEXT indexes |
 | `003_catalog_metadata.sql` | Legacy-compatible product metadata columns |
 | `004_relational_foundation.sql` | Normalized categories, brands, variants, sellers, offers, offer history, identity tables, audit logs, and outbox tables |
+| `005_outbox_delivery_leases.sql` | Outbox delivery lease ownership/expiry and retry support |
 
 `product_versions` remains product-level history for compatibility with the
 existing catalogue repository. It is not seller offer history. Seller-specific
@@ -71,8 +72,11 @@ pool and one transaction to write:
 4. An `outbox_events` row.
 5. Three independent `outbox_deliveries` rows.
 
-No synchronization worker or external Redis, Neo4j, or LanceDB adapter is
-implemented in Phase 4.
+The current integrated application adds Redis, Neo4j, and LanceDB adapters and
+a Phase 8 outbox worker after the original Phase 4 schema foundation. The
+outbox event and delivery tables are created by the relational migrations;
+runtime behavior is specified in REDIS_PHASE5.md, GRAPH_SCHEMA.md,
+LANCEDB_PHASE7.md, and OUTBOX_PHASE8.md.
 
 ## Compatibility and rollback
 
@@ -83,10 +87,22 @@ files in `schema_migrations`; MySQL DDL rollback is not assumed. Reversal of
 `004` would require a separately reviewed destructive migration and is not
 provided.
 
-## Deferred functionality
+## Current scope boundaries and later-phase implementation
 
-- Authentication, login, cookies, and session handling.
-- Redis, Neo4j, and LanceDB connections and workers.
-- Outbox polling, retries, dead-letter processing, and reconciliation.
-- Public offer/category/brand/seller HTTP routes.
-- Marketplace frontend changes.
+The following capabilities were introduced after the original Phase 4
+relational foundation and are implemented in the current application:
+
+- Authentication, sessions, customer registration, first-admin bootstrap,
+  and administrator-only catalogue mutation.
+- Redis cache-aside reads and invalidation.
+- Neo4j derived graph projection and graph candidate retrieval.
+- LanceDB persistent vector storage and candidate retrieval.
+- Transactional outbox polling, per-target delivery, retry/lease handling,
+  tombstones, and bounded reconciliation.
+
+They are specified in the phase documents linked above. The current API does
+not expose general hard-delete operations or update/delete management routes
+for every relational entity. In particular, category, brand, seller, and
+variant lifecycle changes remain narrower than the create/read routes, and
+offer deletion is not exposed. Do not infer unsupported CRUD operations from
+the existence of a table or foreign key.

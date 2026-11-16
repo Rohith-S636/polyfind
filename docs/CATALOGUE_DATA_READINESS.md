@@ -21,7 +21,7 @@ feed, or live price.
 ## Demo mode and database mode
 
 `npm run api` starts the deterministic in-memory demo catalogue. It requires
-no database or optional service and uses seed `42` with 50 synthetic products.
+no database or optional service and uses seed `42` with 50 synthetic products. The generated prices use USD.
 
 The database-backed path uses MySQL as the authority for identity, title,
 description, category, price, currency, stock, availability, and version.
@@ -40,10 +40,15 @@ npm run migrate
 npm run seed -- --seed=42 --count=50
 ```
 
-Seeding categories and products occurs in one transaction. Re-running the same
-seed uses stable primary keys and updates the deterministic demo representation
-instead of inserting duplicates. A failed database seed rolls back and exits
-with a failure status; it is not reported as successful persistence.
+The seed command is additive and idempotent at the entity level. It checks
+whether each category and product already exists and skips existing rows; it
+does not overwrite existing product prices, stock, versions, or catalogue
+content. It then creates only missing demo sellers, one standard variant per
+product where absent, and missing seller offers. Repository operations emit
+audit/outbox records for the corresponding writes. This is a sequence of
+repository operations, not one all-or-nothing transaction spanning the entire
+seed run. If a later operation fails, earlier committed operations may remain;
+inspect the command output and database state before retrying.
 
 To reset a disposable local database, use the existing `dropAllTables(pool)`
 helper from `src/catalog/migrations.ts`, then rerun `npm run migrate` and

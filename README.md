@@ -142,9 +142,9 @@ The repository has previously been connected to a Render service, but a current 
 
 The live benchmark runner is `npm run benchmark:integration`. It refuses to run unless `POLYFIND_BENCHMARK_DISPOSABLE=true` and the database name is exactly `polyfind_test`. The CI workflow provisions that disposable database, runs migrations and the deterministic seed, then uploads a JSON artifact with repeated-run raw query/update latencies, provider timings, cache-hit rates, freshness outcomes, environment metadata, and provisional qrels evaluation. Never point this command at an existing or production database.
 
-## Original sprint and slice plan (historical planning context)
+## Active sprint and slice status (historical planning context)
 
-- Original Sprint 1 plan: [Sprint 1 — Research and foundation](docs/sprints/sprint-01.md). The six sprint records and 30 slices are retained as planning and contribution traceability, not as a statement that Sprint 1 is currently active.
+- **Active Sprint:** [Sprint 1 — Research and foundation](docs/sprints/sprint-01.md) — retained as the original planning record only; this label does not assert that Sprint 1 is currently active. The six sprint records and 30 slices are retained for planning and contribution traceability.
 - **Active slices:**
   - `S1-01` — [Repository and contributor workflow](docs/slices/s1-01-repository-and-contributor-workflow.md) (Member A)
   - `S1-02` — [Requirements and research-gap review](docs/slices/s1-02-requirements-and-research-gap-review.md) (Member A)

@@ -137,7 +137,7 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await adminPage.goto(`${baseUrl}/products/${productId}`);
   await expect(adminPage.getByRole("heading", { name: productName })).toBeVisible();
   await expect(adminPage.getByRole("heading", { name: "Compare seller offers" })).toBeVisible();
-  await expect(adminPage.getByText(sellerName)).toBeVisible();
+  await expect(adminPage.getByLabel("Seller price comparison").getByRole("cell", { name: sellerName }).first()).toBeVisible();
   await expect(adminPage.getByText("INR 1699.00").first()).toBeVisible();
   await expect(adminPage.getByRole("heading", { name: "Offer price history" })).toBeVisible();
   await adminPage.screenshot({ path: "test-results/polyfind-product-comparison.png", fullPage: true });

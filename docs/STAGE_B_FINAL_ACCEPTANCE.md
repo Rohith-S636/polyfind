@@ -1,6 +1,7 @@
 # POLYFIND Stage B — Final Acceptance and Submission Evidence
 
-**Baseline reviewed:** d72cc1fcd511e9d6fa3e31a20611a353d3861426 (main, 2026-11-16)  
+**Implementation audit baseline:** d72cc1fcd511e9d6fa3e31a20611a353d3861426 (main, 2026-11-16)  
+**Final Stage B merge on main:** 07300c765c9cbd7b824caa65f793f7b3e72e2a79  
 **Purpose:** Consolidated Stage B gate record. This is an evidence register, not a declaration that unverified gates passed.
 
 ## Approved scope (locked)
@@ -40,7 +41,39 @@ The repository includes automated checks in test/final-delivery.test.ts, test/ca
 - Package declaration on this revision uses LanceDB ^0.41.0.
 - Current source contains separate live startup wiring in scripts/start.ts, scripts/api.ts and scripts/dev.ts.
 - Current CI workflow defines disposable MySQL, Redis and Neo4j services; LanceDB persistence uses a temporary path. The Docker/browser job is pinned to Ubuntu 24.04.
-- The GitHub commit status endpoint returned no combined status entries for this SHA. This audit cannot certify a green current-commit workflow.
+- The GitHub combined-status endpoint returned no entries for the initial audit SHA d72cc1f. The follow-up Stage B verification run below provides the actual CI evidence for the documentation/test revision merged to main.
+
+### Final Stage B CI verification — 2026-11-16
+
+- GitHub Actions run: [43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499)
+- PR head SHA: c8a0838ab95513dabb6a77f6e80daf889d01b061
+- Workflow benchmark metadata commit: 8596f109a57f6e8786d70ea617e5aafa40bcf2c2
+- Merged main commit: 07300c765c9cbd7b824caa65f793f7b3e72e2a79
+- Verification job: **success**
+- Docker Compose stack smoke test: **success**
+- Test summary: 240 total, 239 passed, 0 failed, 1 skipped. The single skip is the explicitly named “unrelated vector events are explicitly skipped” case.
+- Passed steps: npm ci, disposable MySQL integration database preparation, both TypeScript checks, npm test, repeated live multi-store benchmark, benchmark artifact upload, npm run build.
+- Passed Docker steps: Compose validation, production image build, MySQL/Redis/Neo4j startup, migrations, deterministic seed, application readiness, Next.js-proxy API/UI smoke checks, customer/admin browser acceptance, screenshot/report upload, disposable-volume cleanup.
+- Browser evidence artifact: [polyfind-browser-evidence](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499)
+- Measured benchmark artifact: [polyfind-measured-benchmark](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499)
+
+### Final measured CI benchmark
+
+Environment: MySQL 8.0.46, Node.js 22.23.4, Linux x64, AMD EPYC 9V74, 4 allocated CPU cores, 15,983 MB memory. The workload used 50 seed-42 synthetic products, 100 operations per repetition (88 queries and 12 updates), one warm-up and three measured repetitions. LanceDB indexed 50 products; vectorizer polyfind-feature-hash-v1; fusion contributions MySQL 0.50, vector 0.35, graph 0.15.
+
+| Strategy | Mean operation latency (ms) | 95% CI of three run means (ms) | Per-run operation p95 range (ms) | NDCG@10 (provisional) | Non-verified freshness signals |
+|---|---:|---:|---:|---:|---:|
+| MySQL only | 1.14 | 0.905–1.375 | 3.31–3.83 | 0.867 | 0 / 264 |
+| MySQL + Redis cache | 1.25 | 1.247–1.260 | 3.47–3.87 | 0.867 | 0 / 264 |
+| Fixed weighted hybrid | 8.62 | 6.450–10.790 | 11.46–18.38 | 0.887 | 114 / 264 (43.18%) |
+| Adaptive weighted hybrid + cache | 8.17 | 5.368–10.972 | 9.66–18.49 | 0.887 | 114 / 264 (43.18%) |
+
+Interpretation:
+- Hybrid strategies were substantially slower than MySQL-only in this small workload. The run does not demonstrate a latency advantage for hybrid retrieval.
+- MySQL+Redis did not show a material latency improvement over MySQL-only; measured cache hit rate was 9.1–11.4%. Adaptive hybrid cache hit rate was 2.3%.
+- Hybrid NDCG@10 was 0.020 higher (0.887 vs 0.867), but the judgments are manually checked and not independently annotated. This is not a significance test or a general relevance claim.
+- The 43.18% metric is a non-verified/stale derived-candidate freshness signal. Strict mode rejects stale/unverifiable candidates; final price/stock/product fields are hydrated from MySQL. It is not evidence that stale transactional values were displayed.
+- Confidence intervals are based on only three run means and must not be treated as robust inferential intervals. This is a small CI workload, not a production benchmark.
 
 ### Historical measured CI artifact
 
@@ -107,9 +140,9 @@ See [SQL Operations Catalogue](SQL_OPERATIONS_CATALOGUE.md), [Relational Schema]
 
 These cannot be certified by this source/document audit alone:
 
-1. On the actual Windows primary checkout, run npm ci, npm run typecheck, npm run typecheck:scripts, npm test and npm run build; retain exact output and commit SHA.
-2. Verify the latest GitHub Actions run for the final commit: npm install, typechecks, test counts, MySQL/Redis/Neo4j/LanceDB real integration tests, benchmark artifact generation and build.
-3. Verify the Docker/browser job completes Chromium installation and passes customer registration/role denial, admin bootstrap/login, product/brand/seller/variant/offer creation/update, public search, seller comparison and price history.
+1. **CI gate passed:** run 43801480499 verified npm ci, both typechecks, 239/240 tests (one explicit skip), benchmark generation and npm run build. On the actual Windows primary checkout, repeat npm ci, both typechecks, npm test and npm run build; retain the exact local output and SHA.
+2. **Multi-store CI gate passed:** the workflow's disposable MySQL, Redis, Neo4j and LanceDB integration coverage completed successfully; preserve the artifact and logs from run 43801480499.
+3. **Docker/browser CI gate passed:** the Compose job built the production image, started services, migrated/seeded, reached readiness, passed API/UI smoke checks and completed customer registration/role denial, admin bootstrap/login/logout, product/brand/seller/variant/offer creation/update, public search, seller comparison and price-history browser acceptance. Local Windows rehearsal and screenshot review remain required.
 4. Rehearse the 15-minute demo on the disposable local Docker stack. Capture screenshots of the ERD, UI, SQL demonstrations, admin workflow, health/readiness and test evidence.
 5. If public hosting is shown, record the deployed commit SHA and independently test readiness, authentication, search, persistence and all configured stores. Otherwise use local Docker as the authoritative demo.
 6. Fill cover-page placeholders using the institution's exact approved template; do not invent names, SRNs, guide, department or certificate details.
@@ -118,5 +151,5 @@ These cannot be certified by this source/document audit alone:
 
 ## Submission status
 
-**Documentation package:** prepared for review on the stated baseline.  
-**Overall project acceptance:** not yet frozen; current-commit CI, disposable full-stack browser run, local rehearsal and institutional front matter remain evidence gates.
+**Documentation package:** complete and merged to main; CI and disposable Docker/browser acceptance passed on run 43801480499.  
+**Overall project acceptance:** final local Windows rehearsal, institution-specific front matter/signatures, and independent relevance-judgment review remain open. Public hosting is optional and is not certified by this CI run.

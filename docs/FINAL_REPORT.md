@@ -78,6 +78,7 @@ The catalogue is deterministic synthetic data. The default vectorizer is local f
 9. Application Design and Implementation  
 10. Testing, Experiments and Results  
 11. Conclusion and Future Work  
+Team contribution and evidence matrix  
 References  
 Appendices
 

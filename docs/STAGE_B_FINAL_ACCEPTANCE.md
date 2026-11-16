@@ -28,6 +28,10 @@
 | Demo/viva | Aligned 15-minute script and viva answers with current feature-hashing baseline, roles, outbox, freshness behavior and measured-run limitations |
 | Acceptance traceability | This file records the evidence boundary and remaining current-commit verification gates |
 
+## Documentation-contract verification
+
+The repository includes automated checks for the report structure, demo script, dataset provenance, research evidence boundaries, and README slice traceability. Final documentation must preserve those contracts while remaining accurate; the contract tests are not a substitute for current full-stack integration or browser acceptance.
+
 ## Evidence inventory and provenance
 
 ### Current source revision

@@ -61,9 +61,9 @@ PolyFind proposes a reproducible prototype policy with four linked controls:
 This is a proposed architecture and baseline policy. It is not presented as a
 new general-purpose optimizer or as first-of-its-kind work.
 
-## Measured CI benchmark (2026-11-11)
+## Historical measured CI benchmark (2026-11-11)
 
-The current measured evidence is the GitHub Actions run
+The historical measured evidence inspected for this report is the GitHub Actions run
 [42959976828](https://github.com/Rohith-S636/polyfind/actions/runs/42959976828),
 commit `b90ec799ca083fede1817aaac80b985e2fe59cb1`. Download the
 `polyfind-measured-benchmark` artifact from that run for raw observations,
@@ -84,7 +84,7 @@ environment metadata, and per-query relevance results.
 
 ### Measured results
 
-| Strategy | Mean query latency (ms) | p95 across the 3 runs (ms) | NDCG@10 | Non-verified query observations |
+| Strategy | Mean operation latency across run summaries (ms) | Per-run operation p95 range (ms) | NDCG@10 | Non-verified query observations |
 |---|---:|---:|---:|---:|
 | MySQL only | 1.12 | 3.45–4.16 | 0.867 | 0 / 264 |
 | MySQL + Redis cache | 2.79 | 3.55–4.28 | 0.867 | 0 / 264 |
@@ -93,7 +93,11 @@ environment metadata, and per-query relevance results.
 
 The MySQL+Redis cache hit rate was 8.0–9.1% across the three measured runs;
 the adaptive hybrid cache hit rate was 1.1–3.4%. These are descriptive results
-from one small synthetic workload, not general latency estimates.
+from one small synthetic workload, not general latency estimates. The artifact
+belongs to commit b90ec799ca083fede1817aaac80b985e2fe59cb1 and is not a
+measurement of current main d72cc1f. The reported mean is an average of the
+three raw-run mean operation latencies; the p95 column is the range of each
+run's operation p95 and must not be described as mean query latency.
 
 The relevance labels were checked against the exact deterministic seed-42
 product IDs, names, descriptions, categories, and query filters. The hybrid

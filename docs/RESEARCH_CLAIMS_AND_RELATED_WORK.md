@@ -61,7 +61,7 @@ PolyFind proposes a reproducible prototype policy with four linked controls:
 This is a proposed architecture and baseline policy. It is not presented as a
 new general-purpose optimizer or as first-of-its-kind work.
 
-## Historical measured CI benchmark (2026-11-11)
+## Measured CI benchmark (2026-11-11)
 
 The historical measured evidence inspected for this report is the GitHub Actions run
 [42959976828](https://github.com/Rohith-S636/polyfind/actions/runs/42959976828),

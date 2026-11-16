@@ -9,7 +9,7 @@
 
 MySQL is authoritative for catalogue facts, seller offers, price history, user roles, sessions, audit records, and outbox state. Run examples only against a disposable local database or the explicitly disposable CI databases. Do not run migration, seed, DROP, or trigger-creation commands against an existing/deployed database without separate review and backup.
 
-The checked-in catalogue is synthetic. The historical SQL review environment used MySQL 8.0.46 and reported 51 products after seeding a 50-product deterministic base plus an existing/seeded record. This is a historical local observation, not a promise that every clean seed produces 51 products.
+The checked-in catalogue is synthetic. The historical SQL review notes record MySQL 8.0.46 and an observed database count of 51 products after the seed command. This is a historical local database observation, not a promise that every clean seed produces 51 products; the seed command's requested count was 50.
 
 ## 2. DDL and relational integrity
 

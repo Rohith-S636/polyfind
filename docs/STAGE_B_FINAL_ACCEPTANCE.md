@@ -30,7 +30,7 @@
 
 ## Documentation-contract verification
 
-The repository includes automated checks for the report structure, demo script, dataset provenance, research evidence boundaries, and README slice traceability. Final documentation must preserve those contracts while remaining accurate; the contract tests are not a substitute for current full-stack integration or browser acceptance.
+The repository includes automated checks in test/final-delivery.test.ts, test/catalog-seed.test.ts, test/research-claims.test.ts, and test/workflow.test.ts for report structure, demo script, dataset provenance, research evidence boundaries, and README slice traceability. Final documentation must preserve those exact compatibility contracts while remaining accurate; the contract tests are not a substitute for current full-stack integration or browser acceptance.
 
 ## Evidence inventory and provenance
 

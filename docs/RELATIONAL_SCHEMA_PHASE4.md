@@ -1,7 +1,7 @@
 # PolyFind Phase 4 Relational Foundation
 
 This document describes the executable schema in `migrations/001_initial_schema.sql`
-through `migrations/004_relational_foundation.sql`. MySQL is the authoritative
+through `migrations/005_outbox_delivery_leases.sql`. MySQL is the authoritative
 store for catalogue, offer, identity, audit, and synchronization-queue data.
 
 ## Implemented migrations

@@ -12,6 +12,7 @@ store for catalogue, offer, identity, audit, and synchronization-queue data.
 | `002_catalog_indexes.sql` | Product category/price, stock, update-time, and FULLTEXT indexes |
 | `003_catalog_metadata.sql` | Legacy-compatible product metadata columns |
 | `004_relational_foundation.sql` | Normalized categories, brands, variants, sellers, offers, offer history, identity tables, audit logs, and outbox tables |
+| `005_outbox_delivery_leases.sql` | Outbox delivery lease ownership/expiry and retry support |
 
 `product_versions` remains product-level history for compatibility with the
 existing catalogue repository. It is not seller offer history. Seller-specific
@@ -71,8 +72,11 @@ pool and one transaction to write:
 4. An `outbox_events` row.
 5. Three independent `outbox_deliveries` rows.
 
-No synchronization worker or external Redis, Neo4j, or LanceDB adapter is
-implemented in Phase 4.
+The current integrated application adds Redis, Neo4j, and LanceDB adapters and
+a Phase 8 outbox worker after the original Phase 4 schema foundation. The
+outbox event and delivery tables are created by the relational migrations;
+runtime behavior is specified in REDIS_PHASE5.md, GRAPH_SCHEMA.md,
+LANCEDB_PHASE7.md, and OUTBOX_PHASE8.md.
 
 ## Compatibility and rollback
 

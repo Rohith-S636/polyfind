@@ -63,14 +63,16 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await expect(adminPage.getByRole("heading", { name: "Administrator workspace" })).toBeVisible();
 
   await adminPage.getByRole("button", { name: "Sign out" }).click();
-  await adminPage.waitForURL(`${baseUrl}/login`);
+  await adminPage.waitForURL(`${baseUrl}/`);
+  await expect(adminPage.getByRole("link", { name: "Sign in" })).toBeVisible();
+  await adminPage.goto(`${baseUrl}/login`);
   await adminPage.getByLabel("Email").fill(adminEmail);
   await adminPage.getByLabel("Password").fill(password);
   await adminPage.getByRole("button", { name: "Sign in" }).click();
   await adminPage.waitForURL(`${baseUrl}/admin`);
   await expect(adminPage.getByRole("heading", { name: "Administrator workspace" })).toBeVisible();
 
-  const productForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create product" }) });
+  const productForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create product", exact: true }) });
   await productForm.getByPlaceholder("Product ID").fill(productId);
   await productForm.getByPlaceholder("Product name").fill(productName);
   await productForm.getByPlaceholder("Description").fill("A synthetic lantern used to validate the complete administrator catalogue workflow.");
@@ -81,7 +83,7 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await productForm.getByRole("button", { name: "Create product" }).click();
   await expect(adminPage.getByRole("status")).toContainText("Product created.");
 
-  const brandForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create brand" }) });
+  const brandForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create brand", exact: true }) });
   await brandForm.getByPlaceholder("Brand ID").fill(brandId);
   await brandForm.getByPlaceholder("Brand name").fill(brandName);
   await brandForm.getByPlaceholder("Slug").fill(brandId);
@@ -89,14 +91,14 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await brandForm.getByRole("button", { name: "Create brand" }).click();
   await expect(adminPage.getByRole("status")).toContainText("Brand created.");
 
-  const sellerForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create seller" }) });
+  const sellerForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create seller", exact: true }) });
   await sellerForm.getByPlaceholder("Seller ID").fill(sellerId);
   await sellerForm.getByPlaceholder("Seller name").fill(sellerName);
   await sellerForm.getByPlaceholder("Slug").fill(sellerId);
   await sellerForm.getByRole("button", { name: "Create seller" }).click();
   await expect(adminPage.getByRole("status")).toContainText("Seller created.");
 
-  const variantForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create product variant" }) });
+  const variantForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create product variant", exact: true }) });
   await variantForm.getByPlaceholder("Product ID").fill(productId);
   await variantForm.getByPlaceholder("Variant ID").fill(variantId);
   await variantForm.getByPlaceholder("Variant key (e.g. colour)").fill("colour");
@@ -105,7 +107,7 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await variantForm.getByRole("button", { name: "Create variant" }).click();
   await expect(adminPage.getByRole("status")).toContainText("Variant created.");
 
-  const offerForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create seller offer" }) });
+  const offerForm = adminPage.locator("form").filter({ has: adminPage.getByRole("heading", { name: "Create seller offer", exact: true }) });
   await offerForm.getByPlaceholder("Offer ID").fill(offerId);
   await offerForm.getByPlaceholder("Product ID").fill(productId);
   await offerForm.getByPlaceholder("Seller ID").fill(sellerId);
@@ -135,7 +137,7 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await adminPage.goto(`${baseUrl}/products/${productId}`);
   await expect(adminPage.getByRole("heading", { name: productName })).toBeVisible();
   await expect(adminPage.getByRole("heading", { name: "Compare seller offers" })).toBeVisible();
-  await expect(adminPage.getByText(sellerName)).toBeVisible();
+  await expect(adminPage.getByLabel("Seller price comparison").getByRole("cell", { name: sellerName }).first()).toBeVisible();
   await expect(adminPage.getByText("INR 1699.00").first()).toBeVisible();
   await expect(adminPage.getByRole("heading", { name: "Offer price history" })).toBeVisible();
   await adminPage.screenshot({ path: "test-results/polyfind-product-comparison.png", fullPage: true });

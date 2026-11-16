@@ -93,6 +93,17 @@ Appendices
 - Figure 10.1 — GitHub Actions verification evidence
 - Figure 10.2 — Benchmark strategy comparison
 
+## Team contribution and evidence matrix
+
+The repository's [Parallel Work Plan](PARALLEL_WORK_PLAN.md) assigns each implementation slice to one directly responsible owner. The table below summarizes the planned ownership split across database and application work. It is an assignment record, not proof that a person completed a slice. Before submission, replace Member A/Member B with the approved names and attach each person's actual commits, pull requests, test outputs, and screenshots. The final contribution statement must reflect actual work, not only planned ownership.
+
+| Team member | Database contribution assigned | Application contribution assigned | Evidence to attach |
+|---|---|---|---|
+| Member A | MySQL schema/migrations, catalogue CRUD, constraints/indexes/transaction tests, version metadata and database-facing retrieval contracts | Backend API, retrieval/fusion, freshness validation and adaptive planner | Slice PRs/commits, migration/test outputs, API screenshots and review record |
+| Member B | Synthetic dataset/validation, vector ingestion/adapter, Neo4j graph schema/sync, Redis invalidation | Catalogue UI and search UI/API integration | Slice PRs/commits, integration-test outputs, search/admin screenshots and review record |
+
+Both members therefore have planned work in database and application areas. Actual individual completion must be substantiated with repository history and test evidence before the report is signed.
+
 ## List of tables
 
 - Table 2.1 — Related-work comparison
@@ -366,6 +377,19 @@ The mean operation latency values are averages of the three raw-run mean latenci
 The benchmark does not show a latency advantage for hybrid retrieval on this small workload. The hybrid strategies show a 0.020 higher provisional NDCG@10 than MySQL-only, but the qrels are manually checked against the seed-42 catalogue and are not independently annotated. The difference is not a significance test. Redis had a low cache-hit rate (8.0–9.1% in its three raw runs), and one run included large update-latency outliers.
 
 The freshness metric counted query responses whose freshness status was not verified. It recorded 114/264 observations for both hybrid strategies. It does not mean stale price or stock was presented: strict mode rejects stale/unverifiable candidates and final product fields are hydrated from MySQL. It does reveal that derived-candidate freshness was not consistently verified under this workload and must be discussed as a limitation.
+
+
+
+### Figure 10.2 — Historical mean operation latency by strategy
+
+The following chart is generated from the three raw-run mean operation latencies in the historical artifact. It is not a current-main measurement.
+
+~~~mermaid
+xychart-beta
+    x-axis ["MySQL", "MySQL+Redis", "Fixed hybrid", "Adaptive hybrid"]
+    y-axis "Mean operation latency (ms)" 0 --> 10
+    bar [1.12, 2.79, 8.42, 9.42]
+~~~
 
 ## 10.4 Threats to validity
 

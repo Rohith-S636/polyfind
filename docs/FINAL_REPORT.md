@@ -511,3 +511,12 @@ Run migrations and seeding only against an intentionally configured disposable/l
 - Local Docker health/readiness and admin workflow screenshots.
 - Final benchmark JSON and analysis output for the final commit.
 - Institution-required signed certificate/declaration pages.
+
+## Automated documentation-contract notes
+
+The repository's documentation tests assert stable cross-reference headings and key limitations so later edits do not silently remove required academic evidence. These statements are explicit:
+
+- The benchmark fixture is not empirical evidence; only a dated raw CI artifact supports the historical measurements described in Chapter 10.
+- No performance superiority claim is made.
+- Process-local throttling is not a distributed rate limiter and requires a shared limiter for horizontal scaling.
+- Public hosting is not certified until the deployed revision, persistence, readiness, authentication and dependencies are independently smoke-tested.

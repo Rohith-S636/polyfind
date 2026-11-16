@@ -83,10 +83,22 @@ files in `schema_migrations`; MySQL DDL rollback is not assumed. Reversal of
 `004` would require a separately reviewed destructive migration and is not
 provided.
 
-## Deferred functionality
+## Current scope boundaries and later-phase implementation
 
-- Authentication, login, cookies, and session handling.
-- Redis, Neo4j, and LanceDB connections and workers.
-- Outbox polling, retries, dead-letter processing, and reconciliation.
-- Public offer/category/brand/seller HTTP routes.
-- Marketplace frontend changes.
+The following capabilities were introduced after the original Phase 4
+relational foundation and are implemented in the current application:
+
+- Authentication, sessions, customer registration, first-admin bootstrap,
+  and administrator-only catalogue mutation.
+- Redis cache-aside reads and invalidation.
+- Neo4j derived graph projection and graph candidate retrieval.
+- LanceDB persistent vector storage and candidate retrieval.
+- Transactional outbox polling, per-target delivery, retry/lease handling,
+  tombstones, and bounded reconciliation.
+
+They are specified in the phase documents linked above. The current API does
+not expose general hard-delete operations or update/delete management routes
+for every relational entity. In particular, category, brand, seller, and
+variant lifecycle changes remain narrower than the create/read routes, and
+offer deletion is not exposed. Do not infer unsupported CRUD operations from
+the existence of a table or foreign key.

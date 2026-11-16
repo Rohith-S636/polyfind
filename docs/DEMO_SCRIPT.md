@@ -37,7 +37,7 @@ Register a customer account and sign in. Explain that customer role cannot mutat
 Show health diagnostics and explain the three candidate sources. Describe the default weighted reciprocal-rank contributions (MySQL 0.50, vector 0.35, graph 0.15). Be precise: the no-key local vectorizer is deterministic feature-hashing, not a pretrained semantic model. Demonstrate the outbox and version/freshness safeguards from the integration test evidence.
 
 ## 12:00–13:30 — Database and correctness evidence
-Show the latest GitHub Actions run for the exact commit being demonstrated. State its actual conclusion and per-job result; do not call it passing unless it is green. Point out which MySQL, Redis, Neo4j and LanceDB integration steps actually executed, and identify any skipped/failed step. The historical benchmark artifact from run 42959976828 belongs to commit b90ec79 and is not a measurement of the current main revision.
+Show the latest GitHub Actions run for the exact commit being demonstrated. State its actual conclusion and per-job result; do not call it passing unless it is green. Point out which MySQL, Redis, Neo4j and LanceDB integration steps actually executed, and identify any skipped/failed step. If any integration step is skipped or failed, state that plainly; do not present it as passed. The historical benchmark artifact from run 42959976828 belongs to commit b90ec79 and is not a measurement of the current main revision.
 
 ## 13:30–15:00 — Limitations and conclusion
 State the limitations:

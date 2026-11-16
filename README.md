@@ -2,7 +2,7 @@
 
 PolyFind is an academic product-discovery application and DBMS capstone. It demonstrates a MySQL-authoritative catalogue with Redis caching, Neo4j relationship retrieval, LanceDB vector similarity, freshness validation, seller offers, price history, and administrator-controlled catalogue management.
 
-> **Project status:** active academic implementation. The repository has passing disposable MySQL, Redis, Neo4j, and LanceDB integration coverage and a repeated live multi-store CI benchmark. Use the latest GitHub Actions run and attached artifact as the current evidence; public deployment and independent relevance-judgment review are not certified.
+> **Project status:** active academic implementation. The repository contains real MySQL, Redis, Neo4j, and LanceDB integration tests and a disposable multi-store CI workflow. A historical measured artifact is documented, but the current main revision is not certified by this documentation audit as having a green latest workflow. Check the exact workflow run and commit before claiming current integration success; public deployment and independent relevance-judgment review are not certified.
 
 ## Approved architecture
 
@@ -111,7 +111,7 @@ Browser sessions use an HttpOnly, SameSite=Strict cookie; the API adds Secure in
 | `GET /api/ready` | Readiness status |
 | `GET /api/products` | Paginated authoritative catalogue |
 | `GET /api/products/:id` | Product detail |
-| `POST /api/search` | Keyword/vector/graph candidate retrieval, weighted fusion, MySQL freshness validation |
+| `GET /api/search` and `POST /api/search` | Keyword/vector/graph candidate retrieval, weighted fusion, MySQL freshness validation |
 | `GET /api/offers?productId=...` | Seller offers for a product |
 | `GET /api/price-history?productId=...` | Offer price history |
 | `POST /api/auth/register` | Customer registration |
@@ -133,7 +133,7 @@ The repository has previously been connected to a Render service, but a current 
 - Relevance judgments are manually checked against the deterministic seed-42 catalogue; independent annotator review remains pending.
 - Fixture benchmark values are not empirical production measurements.
 - Report hardware, dataset, workload, repetitions, raw outputs, confidence intervals, and failure cases for every performance claim.
-- See [the 13-phase acceptance audit](docs/13_PHASE_MASTER_ACCEPTANCE.md), [the final report](docs/FINAL_REPORT.md), and [viva preparation](docs/VIVA_PREPARATION.md).
+- See [the 13-phase acceptance audit](docs/13_PHASE_MASTER_ACCEPTANCE.md), [Stage B final acceptance](docs/STAGE_B_FINAL_ACCEPTANCE.md), [the final report](docs/FINAL_REPORT.md), [the SQL operations catalogue](docs/SQL_OPERATIONS_CATALOGUE.md), and [viva preparation](docs/VIVA_PREPARATION.md).
 
 
 ## Reproducible benchmark artifact
@@ -142,9 +142,9 @@ The repository has previously been connected to a Render service, but a current 
 
 The live benchmark runner is `npm run benchmark:integration`. It refuses to run unless `POLYFIND_BENCHMARK_DISPOSABLE=true` and the database name is exactly `polyfind_test`. The CI workflow provisions that disposable database, runs migrations and the deterministic seed, then uploads a JSON artifact with repeated-run raw query/update latencies, provider timings, cache-hit rates, freshness outcomes, environment metadata, and provisional qrels evaluation. Never point this command at an existing or production database.
 
-## Active sprint and slice status
+## Original sprint and slice plan (historical planning context)
 
-- **Active Sprint:** [Sprint 1 — Research and foundation](docs/sprints/sprint-01.md)
+- Original Sprint 1 plan: [Sprint 1 — Research and foundation](docs/sprints/sprint-01.md). The six sprint records and 30 slices are retained as planning and contribution traceability, not as a statement that Sprint 1 is currently active.
 - **Active slices:**
   - `S1-01` — [Repository and contributor workflow](docs/slices/s1-01-repository-and-contributor-workflow.md) (Member A)
   - `S1-02` — [Requirements and research-gap review](docs/slices/s1-02-requirements-and-research-gap-review.md) (Member A)

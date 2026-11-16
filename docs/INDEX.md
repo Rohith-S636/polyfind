@@ -7,7 +7,8 @@
 | [`README.md`](../README.md) | Project overview, setup, and main workflows |
 | [`PRD.md`](PRD.md) | Approved academic scope, requirements, and exclusions |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Current modular-monolith architecture and data authority |
-| [`13_PHASE_MASTER_ACCEPTANCE.md`](13_PHASE_MASTER_ACCEPTANCE.md) | Living acceptance gates and evidence status |
+| [`13_PHASE_MASTER_ACCEPTANCE.md`](13_PHASE_MASTER_ACCEPTANCE.md) | Living 13-phase acceptance gates and evidence status |
+| [`STAGE_B_FINAL_ACCEPTANCE.md`](STAGE_B_FINAL_ACCEPTANCE.md) | Detailed Stage B evidence inventory, benchmark provenance and final submission gates |
 | [`UPLOAD_SNAPSHOT_AUDIT_2026-11-16.md`](UPLOAD_SNAPSHOT_AUDIT_2026-11-16.md) | Independent audit of the uploaded local snapshot and remaining gates |
 | [`LOCAL_SETUP.md`](LOCAL_SETUP.md) | Local environment and run instructions |
 | [`API.md`](API.md) | HTTP API contracts and routes |
@@ -17,7 +18,8 @@
 | Area | File | Purpose |
 |---|---|---|
 | MySQL schema | [`RELATIONAL_SCHEMA_PHASE4.md`](RELATIONAL_SCHEMA_PHASE4.md) | Relational schema, constraints, and indexes |
-| SQL review | [`POLYFIND_SQL_Review_Notes.md`](POLYFIND_SQL_Review_Notes.md) | SQL review and demonstration notes |
+| SQL review | [`POLYFIND_SQL_Review_Notes.md`](POLYFIND_SQL_Review_Notes.md) | SQL review and historical demonstration notes |
+| [`SQL_OPERATIONS_CATALOGUE.md`](SQL_OPERATIONS_CATALOGUE.md) | Consolidated DDL, DML, analytical SQL and advanced DBMS concepts |
 | Redis | [`REDIS_PHASE5.md`](REDIS_PHASE5.md) | Cache-aside, invalidation, degraded mode, and outbox behavior |
 | Neo4j | [`GRAPH_SCHEMA.md`](GRAPH_SCHEMA.md) | Graph schema, projection ownership, and synchronization |
 | LanceDB | [`LANCEDB_PHASE7.md`](LANCEDB_PHASE7.md) | Persistent vectors, local feature hashing, and versioned sync |

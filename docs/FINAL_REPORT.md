@@ -220,6 +220,31 @@ Correctness requires transactional writes, optimistic version checks, idempotent
 
 Default fusion contributions are MySQL 0.50, vector 0.35, and graph 0.15. They are engineering defaults, not empirically optimized weights.
 
+### Figure 3.1 — Runtime topology
+
+~~~mermaid
+flowchart TD
+    U[Browser] --> WEB[Next.js UI]
+    WEB --> API[Node.js API]
+    API --> AUTH[Auth and RBAC]
+    API --> PLAN[Retrieval planner]
+    PLAN --> SQL[(MySQL authority)]
+    PLAN --> REDIS[(Redis cache)]
+    PLAN --> NEO[(Neo4j graph candidates)]
+    PLAN --> LANCE[(LanceDB vector candidates)]
+    SQL --> FUSE[Weighted reciprocal-rank fusion]
+    REDIS --> FUSE
+    NEO --> FUSE
+    LANCE --> FUSE
+    FUSE --> VALIDATE[MySQL hydration and freshness validation]
+    VALIDATE --> API
+    API --> WEB
+    SQL --> OUTBOX[Transactional outbox]
+    OUTBOX --> REDIS
+    OUTBOX --> NEO
+    OUTBOX --> LANCE
+~~~
+
 ## 3.5 Runtime modes
 
 Demo mode uses an in-memory deterministic catalogue and is useful for UI development; it does not prove real database integration. Live local Docker mode uses MySQL, Redis, and Neo4j services, with LanceDB persisted in the application volume. CI uses disposable services and a temporary LanceDB path. Public hosting is not certified until its deployed SHA and persistent dependencies are independently checked.

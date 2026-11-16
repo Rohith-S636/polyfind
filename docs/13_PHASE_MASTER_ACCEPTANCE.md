@@ -1,8 +1,10 @@
 # POLYFIND — 13-phase master acceptance and completion record
 
 **Repository:** Rohith-S636/polyfind  
-**Baseline audited:** d72cc1fcd511e9d6fa3e31a20611a353d3861426 (main, 2026-11-16)  
-**Detailed Stage B record:** [STAGE_B_FINAL_ACCEPTANCE.md](STAGE_B_FINAL_ACCEPTANCE.md)
+**Implementation audit baseline:** d72cc1fcd511e9d6fa3e31a20611a353d3861426  
+**Stage B documentation/test merge:** 07300c765c9cbd7b824caa65f793f7b3e72e2a79 (main)  
+**Final CI verification:** [workflow run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499)  
+**Detailed evidence register:** [STAGE_B_FINAL_ACCEPTANCE.md](STAGE_B_FINAL_ACCEPTANCE.md)
 
 ## Approved constraints
 
@@ -12,59 +14,59 @@
 - Synthetic deterministic dataset only; no retailer scraping or live market-data claims.
 - Public browse/search; customer registration/login; administrator-only shared catalogue mutation.
 - Weighted hybrid retrieval; MySQL hydration and freshness validation.
-- Local Docker is the full reproducible demo path. Public hosting is optional and not certified by repository CI alone.
+- Local Docker is the reproducible full-stack demonstration path. Public hosting is optional and not certified by repository CI alone.
 - Never migrate, reset, or mutate an existing database/volume without explicit authorization. CI may migrate only disposable service databases.
 
 ## Audit method and evidence rule
 
 A phase is PASS only when implementation, automated tests, documentation and relevant integration evidence pass for the same identified revision. A planned test, a test file, a green typecheck, a historical benchmark, or an unverified screenshot is not sufficient.
 
-The current source-level review covered README, PRD, architecture, runtime entry points, API server, relational schema, cache/graph/vector/outbox adapters and documentation, integration test sources, CI workflow configuration, and the historical benchmark artifact. It did not execute npm ci, the full test suite, Docker, browser E2E, or a local four-store rehearsal.
+The source-level review covered README, PRD, architecture, runtime entry points, API server, relational schema, cache/graph/vector/outbox adapters and documentation, integration test sources, CI workflow configuration, and raw benchmark artifacts. The final verification run below exercised the merged Stage B revision. It does not replace the team's local Windows rehearsal or institution-specific report sign-off.
 
-The combined GitHub commit-status endpoint returned no status entries for d72cc1f. Consequently this document does not claim a green current-commit CI run.
+## Final verification evidence
+
+[GitHub Actions run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499) passed both jobs:
+- Verification job: npm ci, disposable MySQL integration database, TypeScript typecheck, script typecheck, npm test, repeated multi-store benchmark, artifact upload, and production build all passed.
+- Test summary: 240 total, 239 passed, 0 failed, 1 explicitly skipped (unrelated vector events).
+- Docker Compose job: production image build, disposable database services, migrations, seed, application readiness, API/UI smoke checks, and customer/admin browser acceptance passed.
+- Browser evidence and measured benchmark artifacts are attached to the workflow run.
+- The workflow PR head was c8a0838ab95513dabb6a77f6e80daf889d01b061; artifact metadata commit was 8596f109a57f6e8786d70ea617e5aafa40bcf2c2; merged main commit is 07300c765c9cbd7b824caa65f793f7b3e72e2a79.
 
 ## Phase acceptance matrix
 
 | Phase | Gate | Current disposition |
 |---:|---|---|
-| 1 | Academic requirements and approved scope | Documented and aligned; research gap remains a candidate hypothesis, not a novelty claim |
-| 2 | Repository and implementation audit | Source-level review completed; local clean install and current-commit CI evidence pending |
-| 3 | MySQL, Redis, Neo4j and LanceDB architecture | Implementations and architecture docs present; verify all real services in latest current-commit CI |
-| 4 | Dataset and provenance | Deterministic synthetic generator documented; USD currency and lack of separate dataset license disclosed; disposable MySQL seed verification pending |
-| 5 | Backend and runtime wiring | Live wiring reviewed in scripts/start.ts, scripts/api.ts and scripts/dev.ts; current tests/build and shutdown/outbox execution pending |
-| 6 | Frontend workflows | Search, detail, offers/history, customer and admin routes documented; current browser acceptance run pending |
-| 7 | Authentication and RBAC | Auth source and MySQL integration coverage reviewed; current CI and browser role-denial/admin evidence pending |
-| 8 | Real database demonstrations | CI provisions disposable MySQL/Redis/Neo4j and LanceDB test path; latest run's executed/passed/skipped counts must be attached |
-| 9 | Hybrid retrieval and freshness | MySQL keyword, vector and graph providers plus fusion/freshness path present; current-commit E2E evidence pending |
-| 10 | Testing, performance and security | Historical benchmark artifact recorded; current full tests/build/security audit and independent qrels review pending |
-| 11 | Docker and deployment | Docker/browser workflow configured for Ubuntu 24.04; current browser run and any public deployed-SHA smoke test pending |
-| 12 | Documentation/report | Stage B report, SQL catalogue, API, relational schema, provenance and evidence register prepared in this acceptance revision |
-| 13 | Demo and viva | 15-minute script and extended viva prepared; live rehearsal and final screenshots pending |
+| 1 | Academic requirements and approved scope | **PASS — documented**; research gap remains a candidate hypothesis, not a novelty claim |
+| 2 | Repository and implementation audit | **PASS — source audit + CI**; local Windows clean install/rehearsal remains |
+| 3 | MySQL, Redis, Neo4j and LanceDB architecture | **PASS — integration coverage**; all stores are derived except MySQL authority |
+| 4 | Dataset and provenance | **PASS — CI seed and documented**; deterministic synthetic USD catalogue; no standalone dataset license is asserted |
+| 5 | Backend and runtime wiring | **PASS — CI typechecks, tests and production build**; local Windows smoke test remains |
+| 6 | Frontend workflows | **PASS — browser acceptance**; search, details, offers/history and admin routes exercised |
+| 7 | Authentication and RBAC | **PASS — browser acceptance**; customer registration/role denial, first-admin bootstrap, login/logout exercised |
+| 8 | Real database demonstrations | **PASS — disposable CI services and integration tests**; one explicit test skip is recorded |
+| 9 | Hybrid retrieval and freshness | **PASS — benchmark and browser flow**; hybrid is slower in the measured workload and freshness signals remain a limitation |
+| 10 | Testing, performance and security | **PASS — tests/build/benchmark**; qrels remain provisional and a separate current security/dependency audit is still required |
+| 11 | Docker and deployment | **PASS — Docker Compose/browser CI**; public Render deployment SHA and external free-tier persistence are not certified by this run |
+| 12 | Documentation/report | **PASS — Stage B report, SQL catalogue, API, schema, provenance, demo/viva and acceptance records merged to main** |
+| 13 | Demo and viva | **PREPARED** — 15-minute script and extended viva are ready; local rehearsal and institutional front matter remain |
 
-## Historical measured benchmark evidence
+## Final measured benchmark summary
 
-The only inspected raw measured artifact in this audit is workflow run [42959976828](https://github.com/Rohith-S636/polyfind/actions/runs/42959976828), generated on 2026-11-11 for commit b90ec799ca083fede1817aaac80b985e2fe59cb1. It used MySQL 8.0.46, 50 seed-42 synthetic products, 100 operations, one warm-up and three repetitions. It is not evidence for current main d72cc1f.
+The final measured artifact in run 43801480499 used 50 seed-42 synthetic products, 100 operations per repetition (88 queries, 12 updates), one warm-up and three measured repetitions. MySQL 8.0.46; Node.js 22.23.4; Linux x64; AMD EPYC 9V74; four allocated CPU cores; 15,983 MB memory. NDCG@10 was 0.867 for MySQL-only/cache and 0.887 for both hybrid strategies. Mean operation latency was 1.14 ms MySQL-only, 1.25 ms MySQL+Redis, 8.62 ms fixed hybrid and 8.17 ms adaptive hybrid. Hybrid strategies recorded 114/264 (43.18%) non-verified derived-candidate freshness signals.
 
-The artifact recorded:
-- MySQL-only mean operation latency 1.12 ms; fixed hybrid 8.42 ms; adaptive hybrid+cache 9.42 ms.
-- Provisional NDCG@10 0.867 for MySQL-only and 0.887 for hybrid.
-- 114/264 (43.18%) non-verified freshness signals for hybrid strategies.
-- Relevance judgments manually checked but not independently annotated.
+The hybrid workload did not demonstrate a latency advantage. The freshness metric counts stale/unverifiable derived-candidate response status, not stale price/stock displayed; strict mode rejects unverified candidates and final product fields are hydrated from MySQL. The 0.020 NDCG difference is provisional and not a significance test. See [Stage B final acceptance](STAGE_B_FINAL_ACCEPTANCE.md) and [the final report](FINAL_REPORT.md) for the full table and limitations.
 
-The hybrid workload did not demonstrate a latency advantage. The freshness metric counts stale/unverifiable derived-candidate response status, not stale price/stock displayed; strict mode rejects unverified candidates and final product fields are hydrated from MySQL. The 0.020 NDCG difference is not a significance test.
+## Remaining submission gates
 
-## Final submission gates
-
-1. Run npm ci, typecheck, script typecheck, full tests and production build on the actual Windows primary checkout; record commit SHA and complete outputs.
-2. Inspect the latest GitHub Actions run for that exact SHA and record actual passed/failed/skipped tests plus all four real-store integrations.
-3. Confirm Docker/browser E2E passes customer registration/role denial, admin bootstrap/login, product/brand/seller/variant/offer creation and update, public search, seller comparison and price history.
-4. Rehearse the 15-minute local Docker demonstration and capture final UI, ERD, SQL, admin, health and CI screenshots.
-5. If public hosting is shown, verify deployed SHA, readiness, auth, search, persistence and every configured dependency. Otherwise identify local Docker as the authoritative demonstration.
-6. Complete institutional front matter from the approved template; do not invent names, SRNs, guide, department, certificate, or signatures.
-7. Obtain independent relevance judgments before making research-quality claims.
-8. Do not claim novelty, production readiness, general performance superiority, or universal strong consistency.
+1. On the actual Windows primary checkout, run npm ci, npm run typecheck, npm run typecheck:scripts, npm test and npm run build; retain the exact output and commit SHA.
+2. Rehearse the 15-minute local Docker demonstration and review/capture final UI, ERD, SQL, admin, health and CI screenshots. CI browser screenshots are available in run 43801480499.
+3. If public hosting is shown, verify deployed SHA, readiness, authentication, search, persistence and every configured dependency. Otherwise identify local Docker as the authoritative demonstration.
+4. Complete institutional front matter from the approved template; do not invent names, SRNs, guide, department, certificate, or signatures.
+5. Attach the two-member contribution matrix using actual commit/PR/test evidence; verify that each member has demonstrable database and application contributions, not only planned slice assignments.
+6. Obtain independent relevance judgments before making research-quality claims. Until then label qrels provisional.
+7. Do not claim novelty, production readiness, general performance superiority, or universal strong consistency.
 
 ## Current completion statement
 
-**Documentation:** Stage B submission documents have been prepared for review.  
-**Overall acceptance:** NOT FROZEN. Current-commit CI, real-store/browser execution, local rehearsal, final screenshots and institution-specific front matter remain evidence gates.
+**Stage B documentation and CI acceptance:** complete and merged to main.  
+**Full academic submission freeze:** pending local Windows rehearsal, institution-specific front matter/signatures, actual two-member contribution evidence, and independent relevance-judgment review. Public hosting remains optional and is not certified by this CI run.

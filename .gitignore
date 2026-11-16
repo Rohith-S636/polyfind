@@ -17,3 +17,5 @@ data/generated/
 # Playwright browser acceptance output
 playwright-report/
 test-results/
+
+data/

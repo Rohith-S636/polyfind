@@ -16,6 +16,32 @@
 - Reproducible benchmark evidence, 15-minute demo, extended viva backup.
 - Never migrate or modify an existing database/volume as part of implementation. CI may migrate only its disposable service database.
 
+
+## Uploaded snapshot audit — 2026-11-16
+
+The uploaded local snapshot was inspected independently. This is a source-level
+review, not a claim that the complete test suite was rerun in this environment.
+
+- The development launcher has been aligned with the production runtime wiring:
+  Redis connection/degraded handling, `CachedCatalogReader`, vector startup
+  indexing, SQL keyword retrieval, graph retrieval, outbox, authentication,
+  and MySQL pool cleanup are now included.
+- Intentionally unconfigured optional outbox targets are acknowledged as
+  `skipped`, rather than being recorded as permanent delivery failures. A
+  configured but temporarily unavailable target remains retryable.
+- The Docker browser job is pinned to `ubuntu-24.04` for Playwright 1.57.0
+  compatibility. Cleanup now checks whether the disposable `.env` file was
+  created before running Compose teardown.
+- `npm ci` did not complete within the available execution window, and this
+  environment had no installed TypeScript/tsx/Next executables. Therefore no
+  fresh typecheck, unit/integration test, or production build result is claimed
+  for this snapshot. Run the commands in `LOCAL_SETUP.md` and require a green
+  GitHub Actions run before marking the remaining gates PASS.
+- The previous observed GitHub Actions evidence (run 42961973016) had the core
+  verification job pass but the Docker browser job fail while installing
+  Chromium on the then-current `ubuntu-latest` image. The workflow correction
+  above addresses that observed failure mode; it still needs a new run.
+
 ## Phase acceptance matrix
 
 | Phase | Acceptance gate | Current state |

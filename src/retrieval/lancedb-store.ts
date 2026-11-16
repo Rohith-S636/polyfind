@@ -231,6 +231,6 @@ export function createLanceDbStoreFromEnvironment(
     path: env.LANCEDB_PATH ?? "./data/lancedb",
     tableName: env.LANCEDB_TABLE ?? "product_embeddings",
     dimensions: Number(env.EMBEDDING_DIMENSIONS ?? 384),
-    modelName: env.EMBEDDING_MODEL ?? "configured-embedding-model",
+    modelName: env.EMBEDDING_MODEL?.trim() || "polyfind-feature-hash-v1",
   });
 }

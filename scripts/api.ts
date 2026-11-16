@@ -22,9 +22,8 @@ import {
   RedisOutboxTarget,
   Neo4jOutboxTarget,
   LanceDbOutboxTarget,
-  UnavailableOutboxTarget,
   LazyOutboxTarget,
-  PermanentOutboxError,
+  SkippedOutboxError,
   SessionAuthService,
 } from "../src/index.js";
 import type { CatalogReader } from "../src/contracts/types.js";
@@ -98,13 +97,16 @@ const semanticProvider = vector.getSemanticProvider();
 const graphProvider = graph ? new Neo4jGraphRetrievalProvider(graph as Neo4jGraphAdapter) : undefined;
 const outboxTargets = [
   new LazyOutboxTarget("redis", async () => {
-    if (!redis) throw new PermanentOutboxError("Redis is intentionally disabled.");
+    if (!redis) throw new SkippedOutboxError("Redis cache is not configured.");
     if (redis.getStatus() !== "connected") await redis.connect();
     return new RedisOutboxTarget(redis, () => redis.getStatus() === "connected");
   }),
   graph
     ? new Neo4jOutboxTarget(graph as Neo4jGraphAdapter)
     : new LazyOutboxTarget("neo4j", async () => {
+        if (!process.env.NEO4J_URI || !process.env.NEO4J_USERNAME || !process.env.NEO4J_PASSWORD) {
+          throw new SkippedOutboxError("Neo4j graph is not configured.");
+        }
         const lifecycle = await initializeNeo4j();
         if (!lifecycle.graph) throw new Error("Neo4j is unavailable.");
         return new Neo4jOutboxTarget(lifecycle.graph as Neo4jGraphAdapter);
@@ -112,7 +114,7 @@ const outboxTargets = [
   new LazyOutboxTarget("lancedb", async () => {
     await vector.initialize();
     const embedder = vector.getEmbedder();
-    if (!embedder) throw new PermanentOutboxError("LanceDB embedding provider is not configured.");
+    if (!embedder) throw new SkippedOutboxError("LanceDB embedding provider is not configured.");
     return new LanceDbOutboxTarget(vector.getStore(), embedder);
   }),
 ];

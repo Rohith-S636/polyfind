@@ -1,3 +1,5 @@
+> **Historical planning document:** This file records the original implementation plan. For the current architecture, runtime behavior, and acceptance status, use [ARCHITECTURE.md](ARCHITECTURE.md), [13_PHASE_MASTER_ACCEPTANCE.md](13_PHASE_MASTER_ACCEPTANCE.md), and [INDEX.md](INDEX.md). Do not use this document as a current implementation checklist.
+
 # PolyFind — Implementation Guide
 
 ## Project direction

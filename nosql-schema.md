@@ -1,3 +1,5 @@
+> **Historical design reference — not the current executable schema.** This document contains early conceptual examples and names that no longer match the implementation in places. For current behavior, use [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/RELATIONAL_SCHEMA_PHASE4.md](docs/RELATIONAL_SCHEMA_PHASE4.md), [docs/GRAPH_SCHEMA.md](docs/GRAPH_SCHEMA.md), [docs/REDIS_PHASE5.md](docs/REDIS_PHASE5.md), and [docs/LANCEDB_PHASE7.md](docs/LANCEDB_PHASE7.md). Do not copy legacy schema statements into migrations or describe planned objects here as implemented.
+
 # PolyFind — Non-Relational Stores (Vector, Graph, Key-Value)
 
 > Companion document: [relation-schema.md](relation-schema.md) covers the authoritative MySQL schema, relational constraints, cascades, trigger, view, and Level 0 / Level 1 data flow diagrams.

@@ -138,7 +138,7 @@ See [SQL Operations Catalogue](SQL_OPERATIONS_CATALOGUE.md), [Relational Schema]
 
 ## Final gates before submission freeze
 
-These cannot be certified by this source/document audit alone:
+CI and disposable browser acceptance are now verified. The remaining submission gates are:
 
 1. **CI gate passed:** run 43801480499 verified npm ci, both typechecks, 239/240 tests (one explicit skip), benchmark generation and npm run build. On the actual Windows primary checkout, repeat npm ci, both typechecks, npm test and npm run build; retain the exact local output and SHA.
 2. **Multi-store CI gate passed:** the workflow's disposable MySQL, Redis, Neo4j and LanceDB integration coverage completed successfully; preserve the artifact and logs from run 43801480499.
@@ -146,8 +146,9 @@ These cannot be certified by this source/document audit alone:
 4. Rehearse the 15-minute demo on the disposable local Docker stack. Capture screenshots of the ERD, UI, SQL demonstrations, admin workflow, health/readiness and test evidence.
 5. If public hosting is shown, record the deployed commit SHA and independently test readiness, authentication, search, persistence and all configured stores. Otherwise use local Docker as the authoritative demo.
 6. Fill cover-page placeholders using the institution's exact approved template; do not invent names, SRNs, guide, department or certificate details.
-7. Obtain independent relevance-judgment review before making a research-quality claim. Until then label qrels provisional.
-8. Do not claim novelty, commercial readiness, production-scale performance or universal strong consistency.
+7. Attach the two-member contribution matrix using actual commit/PR/test evidence; verify that each member has demonstrable database and application contributions, not only planned slice assignments.
+8. Obtain independent relevance-judgment review before making a research-quality claim. Until then label qrels provisional.
+9. Do not claim novelty, commercial readiness, production-scale performance or universal strong consistency.
 
 ## Submission status
 

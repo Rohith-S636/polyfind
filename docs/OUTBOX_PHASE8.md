@@ -2,7 +2,7 @@
 
 MySQL remains the source of truth. Catalogue mutations write an outbox event
 and one delivery row for Redis, Neo4j, and LanceDB in the same MySQL
-transaction. The delivery rows are processed independently by `OutboxWorker`.
+transaction. The delivery rows are processed independently by `OutboxWorker`. LanceDB uses the deterministic local feature-hashing embedder by default when no remote embedding provider is configured; this is an explicit lexical vector baseline, not a fabricated transformer embedding.
 
 ## Delivery state machine
 

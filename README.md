@@ -2,7 +2,7 @@
 
 PolyFind is an academic product-discovery application and DBMS capstone. It demonstrates a MySQL-authoritative catalogue with Redis caching, Neo4j relationship retrieval, LanceDB vector similarity, freshness validation, seller offers, price history, and administrator-controlled catalogue management.
 
-> **Project status:** active academic implementation. The repository contains real MySQL, Redis, Neo4j, and LanceDB integration tests and a disposable multi-store CI workflow. A historical measured artifact is documented, but the current main revision is not certified by this documentation audit as having a green latest workflow. Check the exact workflow run and commit before claiming current integration success; public deployment and independent relevance-judgment review are not certified.
+> **Project status:** Stage B documentation is merged to main. GitHub Actions run [43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499) passed the verification and Docker Compose/browser jobs: 239/240 tests passed, one explicit skip, benchmark artifact generated, production build passed, and customer/admin browser acceptance passed. Public hosting, independent relevance-judgment review, and local Windows demo rehearsal remain separate gates.
 
 ## Approved architecture
 

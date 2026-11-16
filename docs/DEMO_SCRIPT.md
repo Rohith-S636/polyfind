@@ -8,7 +8,7 @@
 - Run migrations only on the intended disposable/demo database, then run `npm run seed -- --seed=42 --count=50`.
 - Confirm `GET /api/health` and `GET /api/ready`.
 - Confirm the admin account exists; remove the bootstrap token from the environment after first use.
-- Keep the GitHub Actions run and the benchmark methodology open as backup evidence.
+- Keep [GitHub Actions run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499), the measured benchmark artifact, and the browser evidence artifact open as backup evidence. This run passed 239/240 tests (one explicit skip), production build, Docker Compose startup, migrations/seed, API/UI smoke checks and customer/admin browser acceptance.
 
 ## 0:00–1:00 — Problem and motivation
 Explain the problem: search systems need relational filters, text/vector similarity, and relationships, but derived stores can lag behind transactional facts. PolyFind keeps MySQL authoritative and treats Redis, Neo4j, and LanceDB as derived retrieval infrastructure.
@@ -37,7 +37,7 @@ Register a customer account and sign in. Explain that customer role cannot mutat
 Show health diagnostics and explain the three candidate sources. Describe the default weighted reciprocal-rank contributions (MySQL 0.50, vector 0.35, graph 0.15). Be precise: the no-key local vectorizer is deterministic feature-hashing, not a pretrained semantic model. Demonstrate the outbox and version/freshness safeguards from the integration test evidence.
 
 ## 12:00–13:30 — Database and correctness evidence
-Show the latest GitHub Actions run for the exact commit being demonstrated. State its actual conclusion and per-job result; do not call it passing unless it is green. Point out which MySQL, Redis, Neo4j and LanceDB integration steps actually executed, and identify any skipped/failed step. If any integration step is skipped or failed, state that plainly; do not present it as passed. The historical benchmark artifact from run 42959976828 belongs to commit b90ec79 and is not a measurement of the current main revision.
+Show [GitHub Actions run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499), which passed both the verification and Docker Compose/browser jobs. Report the test summary accurately: 240 total, 239 passed, 0 failed, 1 explicitly skipped. The run also uploaded a repeated multi-store benchmark and browser screenshots. Keep the 2026-11-11 artifact from run 42959976828 as historical comparison only; it belongs to commit b90ec79.
 
 ## 13:30–15:00 — Limitations and conclusion
 State the limitations:

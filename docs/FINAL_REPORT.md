@@ -105,7 +105,8 @@ The following legacy section labels are retained as cross-references to the expa
 - Figure 9.2 — Customer registration/login screen
 - Figure 9.3 — Administrator catalogue workspace
 - Figure 10.1 — GitHub Actions verification evidence
-- Figure 10.2 — Benchmark strategy comparison
+- Figure 10.2 — Historical benchmark strategy comparison
+- Figure 10.3 — Final Stage B CI benchmark strategy comparison
 
 ## Team contribution and evidence matrix
 
@@ -394,7 +395,7 @@ The Next.js UI provides search, structured filters, sorting, pagination, product
 
 The repository includes unit/API tests, environment-gated real MySQL/Redis/Neo4j/LanceDB integration tests, a Playwright browser journey, typecheck scripts, and a production build. The CI workflow configures disposable MySQL, Redis, and Neo4j services and a temporary LanceDB path. Test-file presence and workflow configuration do not prove that a particular run passed.
 
-The combined GitHub commit-status endpoint returned no status entries for baseline d72cc1f during this audit. Therefore this report does not claim that the current baseline's complete CI run is green. The final current-commit run must be attached before submission freeze.
+The combined status endpoint returned no entries for the initial audit baseline d72cc1f. The follow-up Stage B workflow run [43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499), on PR head c8a0838ab95513dabb6a77f6e80daf889d01b061 and merged to main as 07300c765c9cbd7b824caa65f793f7b3e72e2a79, passed the verification and Docker Compose/browser jobs. It recorded 240 tests: 239 passed, 0 failed, and 1 explicitly skipped.
 
 ## 10.2 Historical benchmark setup
 
@@ -430,7 +431,35 @@ xychart-beta
     bar [1.12, 2.79, 8.42, 9.42]
 ~~~
 
-## 10.4 Threats to validity
+## 10.4 Final Stage B CI benchmark (2026-11-16)
+
+The final measured artifact is attached to [GitHub Actions run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499). It was generated at 2026-11-16 04:03 UTC for artifact metadata commit 8596f109a57f6e8786d70ea617e5aafa40bcf2c2. The workflow PR head was c8a0838ab95513dabb6a77f6e80daf889d01b061; the final documentation/test revision was merged to main as 07300c765c9cbd7b824caa65f793f7b3e72e2a79.
+
+Environment: MySQL 8.0.46, Node.js 22.23.4, Linux x64, AMD EPYC 9V74, four allocated CPU cores and 15,983 MB memory. The workload used 50 deterministic seed-42 synthetic products, 100 operations per repetition (88 queries and 12 updates), one warm-up and three measured repetitions. LanceDB indexed all 50 products. The vectorizer was polyfind-feature-hash-v1; fusion contributions were 0.50 MySQL, 0.35 vector and 0.15 graph.
+
+| Strategy | Mean operation latency (ms) | 95% CI of three run means (ms) | Per-run operation p95 range (ms) | NDCG@10 (provisional) | Non-verified freshness signals |
+|---|---:|---:|---:|---:|---:|
+| MySQL only | 1.14 | 0.905–1.375 | 3.31–3.83 | 0.867 | 0 / 264 |
+| MySQL + Redis cache | 1.25 | 1.247–1.260 | 3.47–3.87 | 0.867 | 0 / 264 |
+| Fixed weighted hybrid | 8.62 | 6.450–10.790 | 11.46–18.38 | 0.887 | 114 / 264 (43.18%) |
+| Adaptive weighted hybrid + cache | 8.17 | 5.368–10.972 | 9.66–18.49 | 0.887 | 114 / 264 (43.18%) |
+
+### Figure 10.3 — Final Stage B mean operation latency by strategy
+
+~~~mermaid
+xychart-beta
+    x-axis ["MySQL", "MySQL+Redis", "Fixed hybrid", "Adaptive hybrid"]
+    y-axis "Mean operation latency (ms)" 0 --> 10
+    bar [1.14, 1.25, 8.62, 8.17]
+~~~
+
+The final run confirms the same trade-off observed in the historical run: hybrid retrieval is materially slower than MySQL-only on this small workload. MySQL+Redis did not show a material latency improvement; its measured cache hit rate was 9.1–11.4%, while adaptive hybrid cache hit rate was 2.3%. Hybrid NDCG@10 was 0.020 higher (0.887 vs 0.867), but the judgments remain manually checked and not independently annotated. This is not a significance test or a general relevance claim.
+
+The 43.18% signal represents a non-verified/stale derived-candidate freshness status. Strict mode rejects stale or unverifiable candidates and final product fields are hydrated from MySQL. It does not mean stale price/stock values were displayed. The 95% intervals are based on only three run means and must not be treated as robust inferential intervals.
+
+The Docker Compose job in the same workflow passed production image build, database startup, migrations, seed, readiness, API/UI smoke checks and browser acceptance. The browser evidence artifact contains product-search and product-comparison screenshots. See Appendix C.
+
+## 10.5 Threats to validity
 
 - Synthetic data limits external validity.
 - The dataset has only 50 products and the workload has 100 operations.
@@ -502,7 +531,13 @@ Run migrations and seeding only against an intentionally configured disposable/l
 - [Transactional outbox](OUTBOX_PHASE8.md)
 - [HTTP API](API.md)
 
-### Appendix C — Evidence attachments to add before submission
+### Appendix C — CI evidence artifacts
+
+- [Workflow run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499) — verification, repeated benchmark, Docker Compose, browser acceptance.
+- The run's polyfind-measured-benchmark artifact contains the raw three-run results and metadata.
+- The run's polyfind-browser-evidence artifact contains the Playwright report and screenshots for product search and product comparison. Artifacts are retained by GitHub for a limited period; download and archive them before expiry.
+
+## Appendix D — Additional evidence attachments to add before submission
 
 - Current-commit GitHub Actions summary and logs.
 - Current browser acceptance screenshots.

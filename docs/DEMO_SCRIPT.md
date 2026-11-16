@@ -37,7 +37,7 @@ Register a customer account and sign in. Explain that customer role cannot mutat
 Show health diagnostics and explain the three candidate sources. Describe the default weighted reciprocal-rank contributions (MySQL 0.50, vector 0.35, graph 0.15). Be precise: the no-key local vectorizer is deterministic feature-hashing, not a pretrained semantic model. Demonstrate the outbox and version/freshness safeguards from the integration test evidence.
 
 ## 12:00–13:30 — Database and correctness evidence
-Show [GitHub Actions run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499), which passed both the verification and Docker Compose/browser jobs. Report the test summary accurately: 240 total, 239 passed, 0 failed, 1 explicitly skipped. The run also uploaded a repeated multi-store benchmark and browser screenshots. Keep the 2026-11-11 artifact from run 42959976828 as historical comparison only; it belongs to commit b90ec79.
+Show [GitHub Actions run 43801480499](https://github.com/Rohith-S636/polyfind/actions/runs/43801480499), which passed both the verification and Docker Compose/browser jobs. Report the test summary accurately: 240 total, 239 passed, 0 failed, 1 explicitly skipped. If any integration step is skipped or failed, state that plainly; do not present it as passed. The run also uploaded a repeated multi-store benchmark and browser screenshots. Keep the 2026-11-11 artifact from run 42959976828 as historical comparison only; it belongs to commit b90ec79.
 
 ## 13:30–15:00 — Limitations and conclusion
 State the limitations:

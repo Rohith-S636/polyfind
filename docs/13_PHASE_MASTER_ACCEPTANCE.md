@@ -1,80 +1,70 @@
 # POLYFIND — 13-phase master acceptance and completion record
 
 **Repository:** Rohith-S636/polyfind  
-**Branch:** main  
-**Current audit rule:** A phase passes only when its implementation, tests, documentation, and relevant integration evidence pass. A previous report or a TypeScript-only green check is not sufficient.
+**Baseline audited:** d72cc1fcd511e9d6fa3e31a20611a353d3861426 (main, 2026-11-16)  
+**Detailed Stage B record:** [STAGE_B_FINAL_ACCEPTANCE.md](STAGE_B_FINAL_ACCEPTANCE.md)
 
 ## Approved constraints
 
-- Academic/personal only; no commercial scope.
-- Target spend ₹0. Use local Docker for the complete demonstration; public hosting is optional and must not be assumed to provide persistent free databases.
+- Academic/personal only; no commercial scope; target spend ₹0.
 - Next.js + Node.js + TypeScript modular monolith.
-- MySQL is authoritative; Redis cache; Neo4j graph; LanceDB embedded vector store. Qdrant excluded.
-- Synthetic deterministic data is allowed and must be labelled synthetic.
-- Public search/browse; customer registration/login; administrator-only shared catalogue mutation.
-- Weighted hybrid ranking; MySQL hydration and freshness validation.
-- Reproducible benchmark evidence, 15-minute demo, extended viva backup.
-- Never migrate or modify an existing database/volume as part of implementation. CI may migrate only its disposable service database.
+- MySQL authoritative; Redis cache/invalidation; Neo4j graph projection; LanceDB embedded persistent vector store. Qdrant excluded.
+- Synthetic deterministic dataset only; no retailer scraping or live market-data claims.
+- Public browse/search; customer registration/login; administrator-only shared catalogue mutation.
+- Weighted hybrid retrieval; MySQL hydration and freshness validation.
+- Local Docker is the full reproducible demo path. Public hosting is optional and not certified by repository CI alone.
+- Never migrate, reset, or mutate an existing database/volume without explicit authorization. CI may migrate only disposable service databases.
 
+## Audit method and evidence rule
 
-## Uploaded snapshot audit — 2026-11-16
+A phase is PASS only when implementation, automated tests, documentation and relevant integration evidence pass for the same identified revision. A planned test, a test file, a green typecheck, a historical benchmark, or an unverified screenshot is not sufficient.
 
-The uploaded local snapshot was inspected independently. This is a source-level
-review, not a claim that the complete test suite was rerun in this environment.
+The current source-level review covered README, PRD, architecture, runtime entry points, API server, relational schema, cache/graph/vector/outbox adapters and documentation, integration test sources, CI workflow configuration, and the historical benchmark artifact. It did not execute npm ci, the full test suite, Docker, browser E2E, or a local four-store rehearsal.
 
-- The development launcher has been aligned with the production runtime wiring:
-  Redis connection/degraded handling, `CachedCatalogReader`, vector startup
-  indexing, SQL keyword retrieval, graph retrieval, outbox, authentication,
-  and MySQL pool cleanup are now included.
-- Intentionally unconfigured optional outbox targets are acknowledged as
-  `skipped`, rather than being recorded as permanent delivery failures. A
-  configured but temporarily unavailable target remains retryable.
-- The Docker browser job is pinned to `ubuntu-24.04` for Playwright 1.57.0
-  compatibility. Cleanup now checks whether the disposable `.env` file was
-  created before running Compose teardown.
-- `npm ci` did not complete within the available execution window, and this
-  environment had no installed TypeScript/tsx/Next executables. Therefore no
-  fresh typecheck, unit/integration test, or production build result is claimed
-  for this snapshot. Run the commands in `LOCAL_SETUP.md` and require a green
-  GitHub Actions run before marking the remaining gates PASS.
-- The previous observed GitHub Actions evidence (run 42961973016) had the core
-  verification job pass but the Docker browser job fail while installing
-  Chromium on the then-current `ubuntu-latest` image. The workflow correction
-  above addresses that observed failure mode; it still needs a new run.
+The combined GitHub commit-status endpoint returned no status entries for d72cc1f. Consequently this document does not claim a green current-commit CI run.
 
 ## Phase acceptance matrix
 
-| Phase | Acceptance gate | Current state |
+| Phase | Gate | Current disposition |
 |---:|---|---|
-| 1. Academic requirements | Approved scope, users, constraints, objectives, and non-goals are consistent across PRD/report/demo | In progress — PRD addendum added; literature/research-gap review and all docs still require reconciliation |
-| 2. Repository and implementation audit | Source inventory, dependency map, baseline CI, and findings register are traceable | In progress — prior audit retained; new corrections are being integrated |
-| 3. Database architecture | MySQL authoritative; Redis/Neo4j/LanceDB adapters; persistent LanceDB Docker volume; no Qdrant; schema/index/transaction evidence | In progress — Compose corrected; real Neo4j/LanceDB integration gates still being repaired |
-| 4. Dataset | Deterministic synthetic products/categories plus brands/sellers/variants/offers; provenance and safe idempotent seed | In progress — additive product seed and seller/variant/offer generation added; needs real MySQL CI verification |
-| 5. Backend | Both production entry points wire the same SQL, graph, vector, cache, auth, and outbox paths; graceful shutdown | In progress — graph wiring and SQL pagination parity added; startup vector backfill and shutdown fixes need CI verification |
-| 6. Frontend | Search/filter/detail plus seller price comparison/history and usable customer/admin workflows | In progress — login/register/admin pages and product offer/history views added; browser-level acceptance still required |
-| 7. Authentication/RBAC | Customer registration/login; one-time admin bootstrap; scrypt; hashed session tokens; expiry/revocation; admin-only mutations; actor attribution; throttling | In progress — customer registration and local throttling added; browser token storage and distributed rate limiting remain hardening gaps |
-| 8. Database demonstrations | Real disposable MySQL, Redis, Neo4j, and LanceDB integration tests run in CI | In progress — CI services configured; real Neo4j projection failure and test suite failures must be resolved |
-| 9. Hybrid search | MySQL + vector + graph providers wired; weighted fusion; initial vector backfill; freshness-safe hydration; end-to-end retrieval tests | In progress — graph provider and weighted RRF wired; local feature-hash vectorizer/backfill added; integration verification pending |
-| 10. Testing/performance/security | Full unit/API/integration suite, production build, security checks, reproducible benchmark raw data and reviewed qrels | In progress — correctness CI currently has failures; fixture benchmark values are explicitly not treated as empirical |
-| 11. Docker/deployment | Correct Compose services, persistent data, health checks, startup/shutdown, deployed commit and health smoke test | In progress — Compose Qdrant removed and LanceDB volume added; public deployment not independently certified |
-| 12. Documentation/report | README, PRD, architecture, report, diagrams, API docs, provenance, setup and benchmark claims match implementation | In progress — README/PRD/architecture/demo/report reconciled; remaining diagrams/viva/acceptance docs still need review |
-| 13. Final demo/viva | Rehearsable 15-minute demo plus extended viva, seeded offers, screenshots/evidence, no unsupported claims | In progress — 15-minute script rewritten; final rehearsal and evidence capture pending |
+| 1 | Academic requirements and approved scope | Documented and aligned; research gap remains a candidate hypothesis, not a novelty claim |
+| 2 | Repository and implementation audit | Source-level review completed; local clean install and current-commit CI evidence pending |
+| 3 | MySQL, Redis, Neo4j and LanceDB architecture | Implementations and architecture docs present; verify all real services in latest current-commit CI |
+| 4 | Dataset and provenance | Deterministic synthetic generator documented; USD currency and lack of separate dataset license disclosed; disposable MySQL seed verification pending |
+| 5 | Backend and runtime wiring | Live wiring reviewed in scripts/start.ts, scripts/api.ts and scripts/dev.ts; current tests/build and shutdown/outbox execution pending |
+| 6 | Frontend workflows | Search, detail, offers/history, customer and admin routes documented; current browser acceptance run pending |
+| 7 | Authentication and RBAC | Auth source and MySQL integration coverage reviewed; current CI and browser role-denial/admin evidence pending |
+| 8 | Real database demonstrations | CI provisions disposable MySQL/Redis/Neo4j and LanceDB test path; latest run's executed/passed/skipped counts must be attached |
+| 9 | Hybrid retrieval and freshness | MySQL keyword, vector and graph providers plus fusion/freshness path present; current-commit E2E evidence pending |
+| 10 | Testing, performance and security | Historical benchmark artifact recorded; current full tests/build/security audit and independent qrels review pending |
+| 11 | Docker and deployment | Docker/browser workflow configured for Ubuntu 24.04; current browser run and any public deployed-SHA smoke test pending |
+| 12 | Documentation/report | Stage B report, SQL catalogue, API, relational schema, provenance and evidence register reconciled in the Stage B documentation branch |
+| 13 | Demo and viva | 15-minute script and extended viva prepared; live rehearsal and final screenshots pending |
 
-## Critical acceptance tests still required
+## Historical measured benchmark evidence
 
-1. **Neo4j real projection:** product, category, brand, seller, variant, offer associations; relationship reconciliation; version monotonicity; deletion ownership; graph retrieval returns candidates.
-2. **LanceDB real persistence:** insert, search, version-protected upsert, tombstone, reopen, and active-count behavior.
-3. **Vector startup:** local feature-hash fallback starts without external credentials; initial MySQL catalogue backfill occurs; outbox updates/deletes remain version-aware.
-4. **Search E2E:** query reaches MySQL, vector, and graph providers; weighted fusion is applied; candidate facts are rehydrated and freshness-checked from MySQL.
-5. **Catalogue seed:** rerun does not overwrite existing product versions/prices/stock; creates only missing synthetic sellers, variants, and offers; emits audit/outbox records.
-6. **RBAC:** customer cannot create/update product, brand, seller, variant, or offer; admin can; spoofed actor IDs never become audit actors; login/bootstrap throttles work.
-7. **UI:** customer register/login; admin bootstrap/login; admin create product/brand/seller/variant/offer; public seller price comparison and price history.
-8. **Runtime:** `scripts/start.ts` and `scripts/api.ts` have equivalent live wiring, pool cleanup, and child-process shutdown.
-9. **CI:** npm ci, app typecheck, script typecheck, all tests, real MySQL/Redis/Neo4j/LanceDB integrations, and production build all pass.
-10. **Academic evidence:** run benchmark workloads on a recorded environment; export raw data and summary; replace fixture-only claims; review qrels.
-11. **Deployment:** verify actual deployed SHA, readiness, login, search, persistence, and all dependency health; do not assume an old Render URL reflects current main.
-12. **Final submission:** reconcile every document and rehearse the 15-minute demo with a working seeded environment.
+The only inspected raw measured artifact in this audit is workflow run [42959976828](https://github.com/Rohith-S636/polyfind/actions/runs/42959976828), generated on 2026-11-11 for commit b90ec799ca083fede1817aaac80b985e2fe59cb1. It used MySQL 8.0.46, 50 seed-42 synthetic products, 100 operations, one warm-up and three repetitions. It is not evidence for current main d72cc1f.
 
-## Change log
+The artifact recorded:
+- MySQL-only mean operation latency 1.12 ms; fixed hybrid 8.42 ms; adaptive hybrid+cache 9.42 ms.
+- Provisional NDCG@10 0.867 for MySQL-only and 0.887 for hybrid.
+- 114/264 (43.18%) non-verified freshness signals for hybrid strategies.
+- Relevance judgments manually checked but not independently annotated.
 
-This file is the living acceptance record. Update a phase to PASS only with commit SHA and test/workflow evidence. Keep failed/blocked gates visible; do not relabel skipped tests as passing.
+The hybrid workload did not demonstrate a latency advantage. The freshness metric counts stale/unverifiable derived-candidate response status, not stale price/stock displayed; strict mode rejects unverified candidates and final product fields are hydrated from MySQL. The 0.020 NDCG difference is not a significance test.
+
+## Final submission gates
+
+1. Run npm ci, typecheck, script typecheck, full tests and production build on the actual Windows primary checkout; record commit SHA and complete outputs.
+2. Inspect the latest GitHub Actions run for that exact SHA and record actual passed/failed/skipped tests plus all four real-store integrations.
+3. Confirm Docker/browser E2E passes customer registration/role denial, admin bootstrap/login, product/brand/seller/variant/offer creation and update, public search, seller comparison and price history.
+4. Rehearse the 15-minute local Docker demonstration and capture final UI, ERD, SQL, admin, health and CI screenshots.
+5. If public hosting is shown, verify deployed SHA, readiness, auth, search, persistence and every configured dependency. Otherwise identify local Docker as the authoritative demonstration.
+6. Complete institutional front matter from the approved template; do not invent names, SRNs, guide, department, certificate, or signatures.
+7. Obtain independent relevance judgments before making research-quality claims.
+8. Do not claim novelty, production readiness, general performance superiority, or universal strong consistency.
+
+## Current completion statement
+
+**Documentation:** Stage B submission documents have been prepared for review.  
+**Overall acceptance:** NOT FROZEN. Current-commit CI, real-store/browser execution, local rehearsal, final screenshots and institution-specific front matter remain evidence gates.

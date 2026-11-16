@@ -109,19 +109,19 @@ Interpretation:
 
 | Phase | Current disposition | Evidence / remaining gate |
 |---:|---|---|
-| 1 Requirements and scope | Documented | PRD and approved constraints align; candidate research gap is not a novelty claim |
-| 2 Repository audit | Partial | Source-level audit at baseline recorded; local clean install and current-commit CI result still required |
-| 3 Database architecture | Implementation documented | MySQL/Redis/Neo4j/LanceDB roles documented; verify all four real services in latest current-commit run |
-| 4 Dataset | Documented | Deterministic synthetic generator and seed 42; validate additive seed against disposable MySQL |
-| 5 Backend | Source reviewed | Live wiring exists in all three entrypoints; run current typechecks/tests/build and verify shutdown/outbox behavior |
-| 6 Frontend | Implementation documented | Search, filters, details, offers/history, login/register/admin routes exist; current browser acceptance run must pass |
-| 7 Authentication/RBAC | Test/source coverage present | MySQL test covers scrypt/session hashing and registration; confirm customer mutation denial and admin journeys in current browser run |
-| 8 Database demonstrations | Workflow configured | Integration tests are environment-gated and CI provides service URLs; inspect current run for actual executed/passed tests, not just test-file presence |
-| 9 Hybrid retrieval | Implementation documented | MySQL keyword, graph and vector providers plus fusion/freshness path; current-commit end-to-end results still required |
-| 10 Testing/performance/security | Historical experiment only | Historical benchmark included; qrels provisional; current full tests/build and dependency/security audit not certified here |
-| 11 Docker/deployment | Docker workflow configured | Ubuntu 24.04 browser job and persistent LanceDB volume documented; current Compose/browser result and public deployment SHA/health remain unverified |
-| 12 Documentation | Stage B documents reconciled | Report, SQL catalogue, API/schema/index and demo/viva docs form the submission set; institutional details and final screenshots must be supplied |
-| 13 Demo/viva | Prepared, not rehearsed | 15-minute script and viva bank aligned; live rehearsal, screenshots and actual demo environment evidence remain to be captured |
+| 1 Requirements and scope | PASS — documented | PRD and approved constraints align; candidate research gap is not a novelty claim |
+| 2 Repository audit | PASS — source audit and CI | Source audit plus final verification run 43801480499; local Windows clean install/rehearsal remains |
+| 3 Database architecture | PASS — integration coverage | MySQL/Redis/Neo4j/LanceDB roles and disposable integration coverage verified in run 43801480499 |
+| 4 Dataset | PASS — CI seed and provenance | Deterministic synthetic seed-42 catalogue; Compose migrations and seed passed; USD and licensing caveats documented |
+| 5 Backend | PASS — CI typechecks/tests/build | Live wiring in all three entrypoints; typechecks, tests, benchmark and production build passed |
+| 6 Frontend | PASS — browser acceptance | Search, filters, details, offers/history and admin routes exercised through Docker Compose browser job |
+| 7 Authentication/RBAC | PASS — browser acceptance | Customer registration/role denial, first-admin bootstrap, admin login/logout passed |
+| 8 Database demonstrations | PASS — disposable CI services | MySQL, Redis, Neo4j and LanceDB integration coverage completed; 239 tests passed and one explicit skip recorded |
+| 9 Hybrid retrieval | PASS — benchmark/browser evidence | Live benchmark and browser search passed; hybrid latency/freshness trade-offs are documented without superiority claims |
+| 10 Testing/performance/security | PASS — CI verification; security review partial | 239/240 tests, build and benchmark passed; qrels remain provisional and separate dependency/security audit is still required |
+| 11 Docker/deployment | PASS — Compose/browser CI | Production image, database services, migrations, readiness, API/UI smoke and browser acceptance passed; public hosting remains unverified |
+| 12 Documentation | PASS — merged to main | Academic report, SQL catalogue, API/schema, provenance, demo/viva and evidence register merged; institutional front matter remains |
+| 13 Demo/viva | PREPARED | 15-minute script, extended viva and CI screenshots available; local Windows rehearsal and institutional sign-off remain |
 
 ## Four-plus advanced DBMS concepts for the review
 

@@ -38,7 +38,7 @@ The combined GitHub commit-status endpoint returned no status entries for d72cc1
 | 9 | Hybrid retrieval and freshness | MySQL keyword, vector and graph providers plus fusion/freshness path present; current-commit E2E evidence pending |
 | 10 | Testing, performance and security | Historical benchmark artifact recorded; current full tests/build/security audit and independent qrels review pending |
 | 11 | Docker and deployment | Docker/browser workflow configured for Ubuntu 24.04; current browser run and any public deployed-SHA smoke test pending |
-| 12 | Documentation/report | Stage B report, SQL catalogue, API, relational schema, provenance and evidence register reconciled in the Stage B documentation branch |
+| 12 | Documentation/report | Stage B report, SQL catalogue, API, relational schema, provenance and evidence register prepared in this acceptance revision |
 | 13 | Demo and viva | 15-minute script and extended viva prepared; live rehearsal and final screenshots pending |
 
 ## Historical measured benchmark evidence

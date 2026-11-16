@@ -63,7 +63,9 @@ test("browser journeys: customer RBAC, admin catalogue CRUD, seller comparison a
   await expect(adminPage.getByRole("heading", { name: "Administrator workspace" })).toBeVisible();
 
   await adminPage.getByRole("button", { name: "Sign out" }).click();
-  await adminPage.waitForURL(`${baseUrl}/login`);
+  await adminPage.waitForURL(`${baseUrl}/`);
+  await expect(adminPage.getByRole("link", { name: "Sign in" })).toBeVisible();
+  await adminPage.goto(`${baseUrl}/login`);
   await adminPage.getByLabel("Email").fill(adminEmail);
   await adminPage.getByLabel("Password").fill(password);
   await adminPage.getByRole("button", { name: "Sign in" }).click();

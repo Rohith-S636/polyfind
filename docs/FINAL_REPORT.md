@@ -1,4 +1,4 @@
-# POLYFIND — Academic Implementation and Evaluation Report
+# PolyFind — Academic Implementation and Evaluation Report
 
 **Project title:** Freshness-Constrained Adaptive Retrieval Across Heterogeneous Databases  
 **Application:** PolyFind — Academic Product Discovery and Comparison System  
@@ -81,6 +81,19 @@ The catalogue is deterministic synthetic data. The default vectorizer is local f
 Team contribution and evidence matrix  
 References  
 Appendices
+
+## Cross-reference to original report acceptance headings
+
+The following legacy section labels are retained as cross-references to the expanded 11-chapter structure; they are not separate or conflicting report versions.
+
+- \`## 1. Problem and objectives\` — Chapters 1–2.
+- \`## 2. Approved architecture\` — Chapter 3.
+- \`## 3. Data and provenance\` — Chapters 4–7 and DATASET_PROVENANCE.md.
+- \`## 4. Correctness and security design\` — Chapters 8–9.
+- \`## 5. Test and integration evidence\` — Chapter 10.
+- \`## 6. Benchmark methodology and reporting\` — Chapter 10 and STAGE_B_FINAL_ACCEPTANCE.md.
+- \`## 7. Limitations and threats to validity\` — Chapters 10–11.
+- \`## 8. Reproducibility\` — Appendix A and LOCAL_SETUP.md.
 
 ## List of figures
 

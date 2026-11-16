@@ -72,4 +72,4 @@ Run repeated experiments with reviewed qrels, larger workloads, a pretrained loc
 
 ## Demo order
 
-Follow [DEMO_SCRIPT.md](./DEMO_SCRIPT.md): verify the environment, show public search, compare seller offers and history, demonstrate customer/admin access, explain multi-store retrieval and freshness, then present actual CI evidence and limitations. Keep the [final report](./FINAL_REPORT.md) and [acceptance checklist](./ACCEPTANCE_CHECKLIST.md) open.
+Follow [DEMO_SCRIPT.md](./DEMO_SCRIPT.md): verify the environment, show public search, compare seller offers and history, demonstrate customer/admin access, explain multi-store retrieval and freshness, then present actual CI evidence and limitations. Keep the [final report](./FINAL_REPORT.md) and [Stage B final acceptance record](./STAGE_B_FINAL_ACCEPTANCE.md) open.
